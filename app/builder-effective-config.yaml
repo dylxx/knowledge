@@ -1,0 +1,9 @@
+directories:
+  output: app
+  buildResources: build
+appId: com.example.myapp
+productName: MyApp
+files:
+  - filter:
+      - '**/*'
+electronVersion: 34.2.0

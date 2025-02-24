@@ -1,17 +1,16 @@
 <template>
     <div id="app">
-      <FloatingBall />
+      <Home />
     </div>
   </template>
   
   <script>
-  // 导入悬浮球组件
-  import FloatingBall from './components/FloatingBall.vue';
+  import Home from './components/Home.vue';
   
   export default {
     name: 'App',
     components: {
-      FloatingBall,
+        Home,
     },
   };
   </script>

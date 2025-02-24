@@ -1,56 +1,67 @@
 <template>
-  <div class="floating-ball" 
-  :style="{ top: position.top + 'px', left: position.left + 'px' }"
-  @mousedown="startDrag">
-    <!-- 输入框 -->
-    <div class="input-box"  >
-      <input type="text" v-model="inputValue" placeholder="请输入..." />
+    <div class="floating-ball" 
+    :style="{ top: position.top + 'px', left: position.left + 'px' }"
+    @mousedown="startDrag">
+      <!-- 输入框 -->
+      <div class="input-box"  >
+        <input type="text" v-model="inputValue" placeholder="请输入..." />
+      </div>
+        <!-- 悬浮球内容 -->
     </div>
-      <!-- 悬浮球内容 -->
-  </div>
 </template>
   
-  <script>
-export default {
-  data() {
-    return {
-      position: { top: 100, left: 100 }, // 初始位置
-      isDragging: false, // 是否正在拖拽
-      dragOffset: { x: 0, y: 0 }, // 拖拽时的偏移量
-      isHovered: false,
-      inputValue:''
-    };
-  },
-  methods: {
-    // 开始拖拽
-    startDrag(event) {
-      this.isDragging = true;
-      this.dragOffset.x = event.clientX - this.position.left;
-      this.dragOffset.y = event.clientY - this.position.top;
+  <script setup>
+import { ref } from "vue";
 
-      // 监听鼠标移动和松开事件
-      window.addEventListener('mousemove', this.onDrag);
-      window.addEventListener('mouseup', this.stopDrag);
-    },
-    // 拖拽中
-    onDrag(event) {
-      if (this.isDragging) {
-        this.position.left = event.clientX - this.dragOffset.x;
-        this.position.top = event.clientY - this.dragOffset.y;
-      }
-    },
-    // 停止拖拽
-    stopDrag() {
-      this.isDragging = false;
-      // 移除事件监听
-      window.removeEventListener('mousemove', this.onDrag);
-      window.removeEventListener('mouseup', this.stopDrag);
-    },
-  },
+// 数据
+const title = ref("Vue 3 模块");
+const count = ref(0);
+let position = ref({top: 100, left: 100})
+let isDragging = ref(false)
+let dragOffset = ref({x: 0, y: 0})
+let isHovered = ref(false)
+let inputValue = ref('')
+
+const increment = () => {
+    count.value++;
 };
+
+const startDrag = (event) => {
+    console.log(event.target.classList);
+    
+    if (!event.target.classList.contains('floating-ball')) {
+        // 如果点击的是子元素 B，不执行拖拽逻辑
+        return
+    }
+    dragOffset.value.x = event.clientX - position.value.left;
+    dragOffset.value.y = event.clientY - position.value.top;
+    
+    
+    // 监听鼠标移动和松开事件
+    window.addEventListener('mousemove', onDrag);
+    window.addEventListener('mouseup', stopDrag);
+}
+
+const onDrag = (event) => {
+    if (isDragging) {
+    position.value.left = event.clientX - dragOffset.value.x;
+    position.value.top = event.clientY - dragOffset.value.y;
+    }
+}
+
+const stopDrag = () => {
+      isDragging.value = false;
+      // 移除事件监听
+      window.removeEventListener('mousemove', onDrag);
+      window.removeEventListener('mouseup', stopDrag);
+    }
 </script>
   
-<style scoped lang="less">
+  <style scoped  lang="less">
+h1 {
+    color: #42b983;
+}
+
 @ball-size: 60px;
 .floating-ball {
   position: fixed;
@@ -62,7 +73,8 @@ export default {
   cursor: grab; // 拖拽时显示抓取光标
   user-select: none; // 防止拖拽时选中文本
   border-radius: 50%;
-  background-image: url("@/assets/eye.png"); /* @ 是 Vue CLI 默认的别名，指向 src 目录 */
+  background-color: #7abfff;
+  background-image: url("../assets/eye.png"); /* @ 是 Vue CLI 默认的别名，指向 src 目录 */
   background-position: center; /* 设置图片居中 */
   background-size: cover; /* 使背景图片填充整个圆形 */
   cursor: pointer;
@@ -112,5 +124,13 @@ export default {
   }
 
 }
+
+// html, body {
+//   margin: 0;
+//   padding: 0;
+//   height: 100%;
+//   background: transparent; /* 设置透明背景 */
+//   overflow: hidden; /* 禁止滚动条 */
+// }
 </style>
   
