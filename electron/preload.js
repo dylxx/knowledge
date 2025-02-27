@@ -5,7 +5,10 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electron', {
   send: (channel, data) => ipcRenderer.send(channel, data),
   receive: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
-  resizeWindow: (size) => ipcRenderer.invoke('resize-window', size)
+  resizeWindow: (size) => ipcRenderer.invoke('resize-window', size),
+  onSearch: (filter) => ipcRenderer.invoke('onSearch', filter),
+  getUngroupNote: (filter) => ipcRenderer.invoke('getUngroupNote', filter),
+  getAllNote: (filter) => ipcRenderer.invoke('getAllNote', filter),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

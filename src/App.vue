@@ -1,22 +1,17 @@
 <template>
-    <div id="app">
-      <Home />
-    </div>
-  </template>
-  
-  <script>
-  import Home from './components/Home.vue';
-  
-  export default {
-    name: 'App',
-    components: {
-        Home,
-    },
-  };
-  </script>
-  
+  <div id="app">
+    <router-view></router-view>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'App',
+};
+</script>
+
 <style>
 #app {
-    text-align: center;
+  text-align: center;
 }
 </style>

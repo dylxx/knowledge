@@ -1,5 +1,6 @@
 {
-  "place-x": 100,
-  "place-y": 100,
-  "file-path": "E:\\documents\\data.json"
+  "placeX": 100,
+  "placeY": 100,
+  "filePath": "E:\\documents\\data.json",
+  "pageSize": 10
 }

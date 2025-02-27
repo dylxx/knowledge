@@ -5,8 +5,8 @@ const {init} = require('./init')
 const path = require('path')
 const createWindow = () => {
   let win = new BrowserWindow({
-    width: 600,
-    height: 400,
+    width: 10,
+    height: 10,
     // alwaysOnTop: true,  // 确保窗口始终在最前面
     frame: false,
     backgroundColor: '#0000000',
