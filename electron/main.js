@@ -1,7 +1,7 @@
 
 const { app, BrowserWindow, Menu, globalShortcut, ipcMain } = require('electron')
 const {setupIpcHandlers} = require('./ipcHander')
-const {initFile} = require('./init')
+const {init} = require('./init')
 const path = require('path')
 const createWindow = () => {
   let win = new BrowserWindow({
@@ -86,6 +86,7 @@ ipcMain.on('ondrop', (event, paths) => {
 app.whenReady().then(() => {
   createWindow()
   setupIpcHandlers()
+  init()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
