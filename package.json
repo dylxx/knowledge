@@ -13,14 +13,16 @@
     "start": "concurrently vite \"electron .\""
   },
   "dependencies": {
+    "@ant-design/icons-vue": "^7.0.1",
+    "ant-design-vue": "^4.2.6",
     "concurrently": "^9.1.2",
     "vue": "^3.5.13"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
-    "electron-builder": "^25.1.8",
     "cross-env": "^7.0.3",
     "electron": "^34.2.0",
+    "electron-builder": "^25.1.8",
     "less": "^4.2.2",
     "vite": "^6.1.1"
   },
@@ -28,10 +30,10 @@
     "appId": "com.example.myapp",
     "productName": "MyApp",
     "files": [
-        "**/*"
+      "**/*"
     ],
     "directories": {
-        "output": "app"
+      "output": "app"
     }
   }
 }

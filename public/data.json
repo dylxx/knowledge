@@ -1,0 +1,20 @@
+[
+  {
+    "label": "将文件拖入即可转码",
+    "value": "software1",
+    "desc": "将文件拖入即可转码",
+    "allow": "upload"
+  },
+  {
+    "label": "压缩转码转换为mp42",
+    "value": "software2",
+    "desc": "将文件拖入即可转码",
+    "allow": "upload"
+  },
+  {
+    "label": "123",
+    "value": "software3",
+    "desc": "将文件拖入即可转码",
+    "allow": "upload"
+  }
+]
