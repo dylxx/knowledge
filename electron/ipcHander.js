@@ -3,6 +3,7 @@ const { ipcMain, BrowserWindow } = require('electron')
 const {getConfig} = require('./init')
 const fs = require('fs');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid')
 
 function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
@@ -50,10 +51,14 @@ function getUngroupNote() {
   return dataList.filter(note => !note.group)
 }
 
+function getGroupNote(groupUUID) {
+  const dataList = getAllNote()
+  return dataList.find(note => note.uuid === groupUUID)
+}
+
 function getAllNote() {
   const config = getConfig()
   const jsonFilePath = path.join(config['filePath'], 'data.json'); // 假设 JSON 文件路径
-      
   const jsonData = fs.readFileSync(jsonFilePath, 'utf8');  // 读取 JSON 文件内容
   return JSON.parse(jsonData);
 }
@@ -63,16 +68,44 @@ function saveNote(event, newNote) {
   const jsonFilePath = path.join(config['filePath'], 'data.json');
   const dataList = getAllNote()
   console.log('note1: ', dataList);
-  let note = dataList.find(item => item.id === newNote.id)
+  let note = dataList.find(item => item.uuid === newNote.uuid)
   
   note.content = newNote.content
   note.title = newNote.title
   note.group = newNote.group
-  note.createtime = newNote.createtime
+  note.createtime = getCurrentDate()
+  note.uuid = newNote.uuid;
   const updatedData = JSON.stringify(dataList, null, 2); // 格式化输出为 2 个空格缩进
   fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
   console.log('文件已更新');
+  return note
+}
+
+function addNote(event, note) {
+  note.createtime = getCurrentDate()
+  note.uuid = uuidv4()
+  console.log('note::::: ', note);
   
+  const dataList = getAllNote()
+  dataList.push(note)
+  const config = getConfig()
+  const jsonFilePath = path.join(config['filePath'], 'data.json');
+  const updatedData = JSON.stringify(dataList, null, 2); // 格式化输出为 2 个空格缩进
+  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+  return note
+}
+
+
+function getCurrentDate() {
+  const today = new Date();
+
+  // 获取年份、月份和日期
+  const year = today.getFullYear();
+  const month = (today.getMonth() + 1).toString().padStart(2, '0');  // 月份从 0 开始，所以加 1
+  const day = today.getDate().toString().padStart(2, '0');
+
+  // 格式化日期为 'YYYY/MM/DD'
+  return `${year}/${month}/${day}`;
 }
 
 function setupIpcHandlers() {
@@ -81,6 +114,8 @@ function setupIpcHandlers() {
   ipcMain.handle('getAllNote',  getAllNote),
   ipcMain.handle('onSearch',  onSearch)
   ipcMain.handle('saveNote',  saveNote)
+  ipcMain.handle('getGroupNote',  getGroupNote)
+  ipcMain.handle('addNote',  addNote)
 }
 
 module.exports = {

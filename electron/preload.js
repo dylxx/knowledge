@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('electron', {
   getUngroupNote: () => ipcRenderer.invoke('getUngroupNote'),
   getAllNote: () => ipcRenderer.invoke('getAllNote'),
   saveNote: (note) => ipcRenderer.invoke('saveNote', note),
+  getGroupNote: (groupUUID) => ipcRenderer.invoke('getGroupNote', groupUUID),
+  addNote: (note) => ipcRenderer.invoke('addNote', note),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

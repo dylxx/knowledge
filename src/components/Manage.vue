@@ -32,7 +32,7 @@
     <div class="item-content">
       <a-input v-model="keyword" size="small">
         <template #suffix>
-          <PlusCircleOutlined @click="addNote" />
+          <PlusCircleOutlined @click="openNewEdit" />
         </template>
       </a-input>
       <a-list class="main-list" size="small" bordered :data-source="noteList" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
@@ -50,7 +50,7 @@
     </a-list>
     </div>
     <div class="edit-div">
-      <div v-if="true">
+      <div v-if="editNote.title">
         <div class="edit-title">
           <a-input @blur="saveNote" style="font: italic small-caps bold 16px/1.5 " v-model:value="editNote.title" :bordered="false" placeholder="标题" />
         </div>
@@ -81,6 +81,10 @@ const menuOpenKeys = ref(['1']);
 const menuSelectedKeys = ref(['sub1']);
 const groupOpenKeys = ref(['1']);
 const groupSelectedKeys = ref(['sub1']);
+let listType = reactive({
+  type: 'allNote',
+  groupName: ''
+})
 const groupList = reactive([
   {name: '测试群组'},
   {name: '测试群组2'},
@@ -89,7 +93,7 @@ const groupList = reactive([
 let editNote = reactive({
   content: '',
   title: '',
-  id: 0,
+  uuid: '',
   group: '',
   createtime: '',
 })
@@ -107,42 +111,65 @@ const getItem = (label, key, icon, children, type) => {
 //   {key: 'item', label: 'label', key: 'key 1', icon: 'icon 1', children: [], type: 'type 11'}
 // ])
 const menuItems = reactive([
-  getItem('所有片段', 'allNote', () => h(AppstoreOutlined)),
-  getItem('未分类', 'unGroup', () => h(BlockOutlined))
+  getItem('所有片段', 'allNote', () => h(AppstoreOutlined), null, null, 'allNote'),
+  getItem('未分类', 'unGroup', () => h(BlockOutlined), null, null, 'unGroup')
 ]);
 const groupItems = reactive([
-  getItem('测试群组1', 'sub1', () => h(ProfileOutlined))
+  getItem('测试群组1', 'uuid', () => h(ProfileOutlined), null, null, 'group')
 ])
 // methods
 const menuClick = async (menu) => {
+  listType.type = menu.key
+  refreshList()
+}
+
+const refreshList = async () => {
   noteList.length = 0
   let list = []
-  if (menu.key === 'allNote') {
+  console.log('listType: ', listType);
+  
+  if (listType.type === 'allNote') {
     list = await window.electron.getAllNote()
-    
-  } else if (menu.key === 'unGroup') {
+  } else if (listType.type === 'unGroup') {
     list = await window.electron.getUngroupNote()
+  } else if (listType.type === 'group') {
+    list = await window.electron.getGroupNote(listType.key)
   }
   noteList.push(...list)
 }
 
+// 打开新的编辑
+const openNewEdit = () => {
+  editNote.content = ''
+  editNote.title = '编辑标题'
+  editNote.group = ''
+  editNote.createtime = ''
+  editNote.uuid = ''
+}
 // 添加笔记
 const addNote = () => {
   console.log('添加笔记');
-  
 }
 const openEdit = (note) => {
   editNote.content = note.content
   editNote.title = note.title
-  editNote.id =note.id
   editNote.group = note.group
   editNote.createtime = note.createtime
+  editNote.uuid = note.uuid
 }
 const saveNote = async () => {
+  if (!editNote.content || !editNote.title) return
   const note = {...editNote}
-  console.log('note: ', note);
-  
-  const result = await window.electron.saveNote(note)
+  console.log('note: ', note.content);
+  // 新增/更新
+  if (!editNote.uuid) {
+    const result = await window.electron.addNote(note)
+    editNote.uuid = result.uuid
+    editNote.createtime = result.createtime
+  } else {
+    const result = await window.electron.saveNote(note)
+  }
+  refreshList()
 }
 // 监听键盘按下事件
 const handleKeydown = (event) => {
@@ -157,7 +184,7 @@ const backHome = () => {
 }
 
 onMounted(() => {
-
+  refreshList()
 });
 
 onBeforeUnmount(() => {
