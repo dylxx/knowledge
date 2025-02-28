@@ -7,8 +7,9 @@ contextBridge.exposeInMainWorld('electron', {
   receive: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
   resizeWindow: (size) => ipcRenderer.invoke('resize-window', size),
   onSearch: (filter) => ipcRenderer.invoke('onSearch', filter),
-  getUngroupNote: (filter) => ipcRenderer.invoke('getUngroupNote', filter),
-  getAllNote: (filter) => ipcRenderer.invoke('getAllNote', filter),
+  getUngroupNote: () => ipcRenderer.invoke('getUngroupNote'),
+  getAllNote: () => ipcRenderer.invoke('getAllNote'),
+  saveNote: (note) => ipcRenderer.invoke('saveNote', note),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

@@ -30,20 +30,38 @@
       <div class="add-button"><a-button><AppstoreAddOutlined/></a-button></div>
     </div>
     <div class="item-content">
-      <a-input @click="inputText" size="small">
+      <a-input v-model="keyword" size="small">
         <template #suffix>
           <PlusCircleOutlined @click="addNote" />
         </template>
       </a-input>
       <a-list class="main-list" size="small" bordered :data-source="noteList" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
       <template #renderItem="{ item }">
-        <div class="list-item">
-          <a-list-item>{{ item.title }}</a-list-item>
+        <div class="main-list-item" @click="openEdit(item)">
+          <a-list-item  class="list-item">
+            <div style="display: flex; flex-direction: row">
+              <div class="itemList-title">{{ item.title }}</div>
+              <div class="itemList-content" >{{ item.content }}</div>
+            </div>
+            <span class="list-item-time">{{ item.createtime.slice(-8) }}</span>
+          </a-list-item>
         </div>
       </template>
     </a-list>
     </div>
-    <div>编辑栏</div>
+    <div class="edit-div">
+      <div v-if="true">
+        <div class="edit-title">
+          <a-input @blur="saveNote" style="font: italic small-caps bold 16px/1.5 " v-model:value="editNote.title" :bordered="false" placeholder="标题" />
+        </div>
+        <a-divider  style="margin: 0"></a-divider>
+        <a-textarea  @blur="saveNote" class="edit-content" v-model:value="editNote.content" placeholder="编辑内容" :rows="24" />
+      </div>
+      <div v-else class="deit-default">
+        <span><EditOutlined /></span>
+        <span>编辑区</span> 
+      </div>
+    </div>
   </div>
 
 </template>
@@ -52,20 +70,29 @@
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount, h } from "vue";
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
-import { ProfileOutlined, AppstoreOutlined, AppstoreAddOutlined, BlockOutlined, PlusCircleOutlined} from '@ant-design/icons-vue'
+import { ProfileOutlined, AppstoreOutlined, AppstoreAddOutlined, BlockOutlined, PlusCircleOutlined,EditOutlined } from '@ant-design/icons-vue'
 
 
 
 // data
 const router = useRouter();
-let noteList = reactive([{title:'测试', content: '测试内容'}])
-const selectedKeys = ref(['1']);
-const openKeys = ref(['sub1']);
+let noteList = reactive([])
+const menuOpenKeys = ref(['1']);
+const menuSelectedKeys = ref(['sub1']);
+const groupOpenKeys = ref(['1']);
+const groupSelectedKeys = ref(['sub1']);
 const groupList = reactive([
   {name: '测试群组'},
   {name: '测试群组2'},
   {name: '测试群组3'},
 ])
+let editNote = reactive({
+  content: '',
+  title: '',
+  id: 0,
+  group: '',
+  createtime: '',
+})
 
 const getItem = (label, key, icon, children, type) => {
   return {
@@ -92,7 +119,7 @@ const menuClick = async (menu) => {
   let list = []
   if (menu.key === 'allNote') {
     list = await window.electron.getAllNote()
-    debugger
+    
   } else if (menu.key === 'unGroup') {
     list = await window.electron.getUngroupNote()
   }
@@ -103,6 +130,19 @@ const menuClick = async (menu) => {
 const addNote = () => {
   console.log('添加笔记');
   
+}
+const openEdit = (note) => {
+  editNote.content = note.content
+  editNote.title = note.title
+  editNote.id =note.id
+  editNote.group = note.group
+  editNote.createtime = note.createtime
+}
+const saveNote = async () => {
+  const note = {...editNote}
+  console.log('note: ', note);
+  
+  const result = await window.electron.saveNote(note)
 }
 // 监听键盘按下事件
 const handleKeydown = (event) => {
@@ -159,7 +199,7 @@ onBeforeUnmount(() => {
   
 <style scoped  lang="less">
 .move-div {
-  height: 30px;
+  height: 10px;
   background-color: aliceblue;
   -webkit-app-region: drag;
 }
@@ -195,17 +235,81 @@ onBeforeUnmount(() => {
   }
 
   .item-content {
-    width: 20%;
+    width: 25%;
     margin: 5px 2px;
+    background-color: #f0f5ff;
+    .main-list {
+      margin: 4px;
+      .main-list-item{
+        :hover {
+          border-radius: 6px;
+          background-color: #c2d5ff;
+        }
+      }
+    }
   }
   // -webkit-app-region: drag;
 }
 .list-item {
-  padding: 2px;
-  :hover {
-    border-radius: 6px;
+  padding: 4px 8px;
+  background-color: #dfe4f9;
+  border-radius: 6px;
+  margin: 4px;
+  display: flex;
+  flex-direction: row;
+  justify-content:space-between;
+  span {
+    font-size: 0.8em;
+  }
+  .itemList-title {
+    margin-right: 3px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 7em;
+    font-size: 0.8em;
+  }
+  .itemList-content {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 8em;
+    font-size: 0.8em;
+  }
+  .list-item-time {
+    font-size: 0.6em;
   }
 }
+.edit-div {
+  width: 55%;
+  height: 100%;
+  input {
+    font:  bold 1.5em/1.5 'Arial', sans-serif;
+  }
+  .edit-content {
+    margin: 6px;
+    width: 100%;
+    border: none;
+  }
+  .deit-default {
+    width: 100%;
+    height: 100%;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; /* 垂直居中 */
+    span {
+      font: 0.8em/0.3 'Arial', sans-serif;
+      margin: 5px 1px;
+    }
+    span:first-child {
+      font: 1.5em/0.3 'Arial', sans-serif;
+    }
+  }
+}
+
 
 
 </style>

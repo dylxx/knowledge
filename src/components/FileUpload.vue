@@ -50,7 +50,6 @@ import { ref } from 'vue';
     };
 
     const handleDrop = (e) => {
-      debugger
       console.log('e: ', e);
       
     }

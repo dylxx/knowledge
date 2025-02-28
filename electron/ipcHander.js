@@ -52,10 +52,27 @@ function getUngroupNote() {
 
 function getAllNote() {
   const config = getConfig()
-  const jsonFilePath = config.filePath; // 假设 JSON 文件路径
+  const jsonFilePath = path.join(config['filePath'], 'data.json'); // 假设 JSON 文件路径
       
   const jsonData = fs.readFileSync(jsonFilePath, 'utf8');  // 读取 JSON 文件内容
   return JSON.parse(jsonData);
+}
+
+function saveNote(event, newNote) {
+  const config = getConfig()
+  const jsonFilePath = path.join(config['filePath'], 'data.json');
+  const dataList = getAllNote()
+  console.log('note1: ', dataList);
+  let note = dataList.find(item => item.id === newNote.id)
+  
+  note.content = newNote.content
+  note.title = newNote.title
+  note.group = newNote.group
+  note.createtime = newNote.createtime
+  const updatedData = JSON.stringify(dataList, null, 2); // 格式化输出为 2 个空格缩进
+  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+  console.log('文件已更新');
+  
 }
 
 function setupIpcHandlers() {
@@ -63,6 +80,7 @@ function setupIpcHandlers() {
   ipcMain.handle('getUngroupNote',  getUngroupNote),
   ipcMain.handle('getAllNote',  getAllNote),
   ipcMain.handle('onSearch',  onSearch)
+  ipcMain.handle('saveNote',  saveNote)
 }
 
 module.exports = {

@@ -20,18 +20,21 @@ function readConfig() {
 }
 
 function createFile() {
-  // 获取 file-path 属性
-  const filePath = config['filePath']; // 假设 JSON 文件中有 'file-path' 属性
-
-  // 检查文件是否存在
+  // 创建note文件
+  const filePath = path.join(config['filePath'], 'data.json');
+  // 创建note数据
   if (!fs.existsSync(filePath)) {
-    // 如果文件不存在，则创建文件
-    const content = '{}';
-    
-    fs.writeFileSync(filePath, content, 'utf8');
-    console.log(`创建文件: ${filePath}`);
+    fs.writeFileSync(filePath, '[]', 'utf8');
+  }
+  //  创建群组数据
+  const groupPath = path.join(config['filePath'], 'group.json');
+  console.log('group: ', fs.existsSync(groupPath));
+  
+  if (!fs.existsSync(groupPath)) {
+    fs.writeFileSync(groupPath, '[]', 'utf8');
   }
 }
+
 
 module.exports = {
   init,
