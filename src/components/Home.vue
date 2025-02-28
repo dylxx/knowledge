@@ -8,7 +8,7 @@
     <div><span class="desc-text">知识库软件 | dylink</span></div>
     <a-list class="main-list" size="small" bordered :data-source="dataList" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
       <template #renderItem="{ item }">
-        <div class="list-item">
+        <div class="list-item" @click="copyContent(item)">
           <a-list-item>{{ item.title }}</a-list-item>
         </div>
       </template>
@@ -49,6 +49,12 @@ const gotoManage = () => {
     console.log('error: ', error);
     
   });
+}
+
+const copyContent = async (note) => {
+  console.log('copycontent');
+  
+  await navigator.clipboard.writeText(note.content)
 }
 
 

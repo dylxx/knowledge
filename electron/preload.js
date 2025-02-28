@@ -12,6 +12,11 @@ contextBridge.exposeInMainWorld('electron', {
   saveNote: (note) => ipcRenderer.invoke('saveNote', note),
   getGroupNote: (groupUUID) => ipcRenderer.invoke('getGroupNote', groupUUID),
   addNote: (note) => ipcRenderer.invoke('addNote', note),
+  deleteNote: (uuid) => ipcRenderer.invoke('deleteNote', uuid),
+  getGroupList: () => ipcRenderer.invoke('getGroupList'),
+  deleteGroup: (uuid) => ipcRenderer.invoke('deleteGroup', uuid),
+  addGroup: (group) => ipcRenderer.invoke('addGroup', group),
+  saveGroup: (group) => ipcRenderer.invoke('saveGroup',group),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

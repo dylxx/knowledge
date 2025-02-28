@@ -15,6 +15,7 @@ function resizeWindow(event, size) {
 }
 
 function  onSearch(event, filter) {
+  const config = getConfig()
   const dataList = getAllNote()
   let count = 0;
   const resultList = [];
@@ -51,16 +52,16 @@ function getUngroupNote() {
   return dataList.filter(note => !note.group)
 }
 
-function getGroupNote(groupUUID) {
+function getGroupNote(event, groupUUID) {
   const dataList = getAllNote()
-  return dataList.find(note => note.uuid === groupUUID)
+  return dataList.filter(note => note.groupUUID === groupUUID)
 }
 
 function getAllNote() {
   const config = getConfig()
   const jsonFilePath = path.join(config['filePath'], 'data.json'); // 假设 JSON 文件路径
   const jsonData = fs.readFileSync(jsonFilePath, 'utf8');  // 读取 JSON 文件内容
-  return JSON.parse(jsonData);
+  return JSON.parse(jsonData).sort((a, b) => a.createtime - b.createtime);
 }
 
 function saveNote(event, newNote) {
@@ -108,14 +109,66 @@ function getCurrentDate() {
   return `${year}/${month}/${day}`;
 }
 
+function deleteNote(event, uuid) {
+  let dataList = getAllNote()
+  dataList = dataList.filter(item => item.uuid !== uuid)
+  const config = getConfig()
+  const jsonFilePath = path.join(config['filePath'], 'data.json');
+  const updatedData = JSON.stringify(dataList, null, 2); // 格式化输出为 2 个空格缩进
+  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+  return note
+}
+
+function getGroupList() {
+  const config = getConfig()
+  const jsonFilePath = path.join(config['filePath'], 'group.json'); // 假设 JSON 文件路径
+  const jsonData = fs.readFileSync(jsonFilePath, 'utf8');  // 读取 JSON 文件内容
+  return JSON.parse(jsonData).sort((a, b) => a.createtime - b.createtime);
+}
+
+function deleteGroup(event, uuid) {
+  let groupList = getGroupList()
+  groupList = groupList.filter(group => group.uuid !== uuid)
+  const config = getConfig()
+  const jsonFilePath = path.join(config['filePath'], 'group.json');
+  const updatedData = JSON.stringify(groupList, null, 2); // 格式化输出为 2 个空格缩进
+  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+}
+
+function addGroup(event, group) {
+  group.uuid = uuidv4()
+  group.createtime = getCurrentDate()
+  let groupList = getGroupList()
+  groupList.push(group)
+  const config = getConfig()
+  const jsonFilePath = path.join(config['filePath'], 'group.json');
+  const updatedData = JSON.stringify(groupList, null, 2); // 格式化输出为 2 个空格缩进
+  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+}
+
+function saveGroup(event, newGroup) {
+  let groupList = getGroupList()
+  const group = groupList.find(item => item.uuid = group.uuid)
+  group.name = newGroup.name
+  const jsonFilePath = path.join(config['filePath'], 'group.json');
+  const updatedData = JSON.stringify(groupList, null, 2); // 格式化输出为 2 个空格缩进
+  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+}
+
 function setupIpcHandlers() {
-  ipcMain.handle('resize-window', resizeWindow),
-  ipcMain.handle('getUngroupNote',  getUngroupNote),
-  ipcMain.handle('getAllNote',  getAllNote),
+  ipcMain.handle('resize-window', resizeWindow)
+  ipcMain.handle('getUngroupNote',  getUngroupNote)
+  ipcMain.handle('getAllNote',  getAllNote)
   ipcMain.handle('onSearch',  onSearch)
   ipcMain.handle('saveNote',  saveNote)
   ipcMain.handle('getGroupNote',  getGroupNote)
   ipcMain.handle('addNote',  addNote)
+  ipcMain.handle('deleteNote',  deleteNote)
+  ipcMain.handle('getGroupList',  getGroupList)
+  ipcMain.handle('deleteGroup',  deleteGroup)
+  ipcMain.handle('addGroup',  addGroup)
+  ipcMain.handle('saveGroup',  saveGroup)
+
 }
 
 module.exports = {
