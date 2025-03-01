@@ -17,21 +17,7 @@
         ></a-menu>
       </div>
       <a-divider  style="margin: 0"><span style="font-size: small">group</span></a-divider>
-      <div class="group-list">
-        <!-- <a-menu
-          id="dddddd"
-          v-model:openKeys="groupOpenKeys"
-          v-model:selectedKeys="groupSelectedKeys"
-          style="width: 100%"
-          mode="inline"
-          :items="groupItems"
-          @click="groupClick"
-          @dblclick="groupDblclick"
-          :contenteditable="editGroup"
-          class="group-menu"
-        >
-        
-      </a-menu> -->
+      <div class="group-list" ref="groupListDiv">
         <a-list size="small" bordered :data-source="groupList" :split="false" style="border: none" :locale="{emptyText: '无群组'}">
           <template #renderItem="{ item }">
             <div :class="{'group-list-item':true, 'selected':groupSelectedKeys[0] === item.uuid}" @mouseenter="showDeleteGroup(item.uuid)" @mouseleave="hideDeleteGroup(item.uuid)" @click="selectedGroup(item)" @dragover="onDragOver" @drop="dropNote($event, item.uuid)" >
@@ -46,14 +32,14 @@
                       <template #content>
                         <a-input v-model:value="editGroupName" size="small" @keydown.enter="saveGroup(item)" @blur="saveGroup(item)"></a-input>
                       </template>
-                      <a-button @click.stop="" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" />
+                      <a-button @click.stop="visible = !visible" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" />
                     </a-popover>
                     <!-- <a-button @click.stop="editGroupCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" /> -->
                     <a-popover v-model:open="visibleDel" trigger="click" placement="right">
                       <template #content>
                         <a-button @click="deleteGroup(item)" size="small">确定?</a-button>
                       </template>
-                      <a-button @click.stop="" style="font-size: 12px; margin: 0; padding: 4px" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
+                      <a-button @click.stop="visibleDel = !visibleDel" style="font-size: 12px; margin: 0; padding: 4px" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
                     </a-popover>
                   </a-tooltip>
                 </div>
@@ -98,7 +84,7 @@
           <a-input @blur="saveNote" style="font: italic small-caps bold 16px/1.5 " v-model:value="editNote.title" :bordered="false" placeholder="标题" />
         </div>
         <a-divider  style="margin: 0"></a-divider>
-        <a-textarea  @blur="saveNote" class="edit-content" v-model:value="editNote.content" placeholder="编辑内容" :rows="24" />
+        <a-textarea  @blur="saveNote" class="edit-content" v-model:value="editNote.content" placeholder="编辑内容" spellcheck="false" :rows="24" />
       </div>
       <div v-else class="deit-default">
         <span><EditOutlined /></span>
@@ -124,6 +110,7 @@ const menuOpenKeys = ref(['allNote']);
 const menuSelectedKeys = ref(['allNote']);
 const groupOpenKeys = ref(['1']);
 const groupSelectedKeys = ref(['sub1']);
+const groupListDiv = ref(null)
 let hoverItem = ref('')
 let hoverGroup = ref('')
 let keyword = ref('')
@@ -136,7 +123,7 @@ let editNote = reactive({
   content: '',
   title: '',
   uuid: '',
-  group: '',
+  groupuuid: '',
   createtime: '',
 })
 let groupList = reactive([])
@@ -161,6 +148,11 @@ const menuItems = reactive([
   getItem('未分类', 'unGroup', () => h(BlockOutlined), null, 'unGroup')
 ]);
 // methods
+const doNothing = (text) => {
+  console.log('点击了:::::', text);
+  
+  return null
+}
 const addGroup = () => {
   groupList.push({
     name: '',
@@ -168,6 +160,14 @@ const addGroup = () => {
     createtime: '',
     no: 0
   })
+  if (groupListDiv.value) {
+    setTimeout(() => {
+      groupListDiv.value.scrollTo({
+        top: groupListDiv.value.scrollHeight, // 滚动到最底部
+        behavior: 'smooth', // 平滑滚动
+      });
+    }, 200);
+  }
 }
 
 const menuClick = (menu) => {
@@ -190,7 +190,7 @@ const selectedGroup = (group) => {
 }
 
 const saveGroup = async (group) => {
-  visible = false
+  visible.value = false
   if (!editGroupName.value) return
   group.name = editGroupName.value
   // editGroupName.value = ''
@@ -204,9 +204,14 @@ const saveGroup = async (group) => {
 }
 
 const deleteGroup = async (group) => {
-  visibleDel = false
-  await window.electron.deleteGroup(group.uuid)
-  getGroupList()
+  visibleDel.value = false
+  if (group.uuid) {
+    await window.electron.deleteGroup(group.uuid)
+    const index = groupList.findIndex(item => item.uuid === group.uuid)
+    groupList.splice(index, 1)
+  } else {
+    groupList.pop()
+  }
 }
 
 const editGroupCli = () => {
@@ -278,6 +283,7 @@ const deleteNote = async (note) => {
 }
 
 const removeGroup = async (note) => {
+  if (!note.groupuuid) return
   await window.electron.removeGroup(note.uuid)
   refreshList()
 }
@@ -289,9 +295,9 @@ const onDragOver = (event) => {
   event.preventDefault() // 必须阻止默认行为，否则drop事件不会触发
 }
 
-const dropNote = async (event, groupUUID) => {
-  const noteUUID = event.dataTransfer.getData('noteUUID')
-  await window.electron.groupTo({noteUUID, groupUUID})
+const dropNote = async (event, groupuuid) => {
+  const noteuuid = event.dataTransfer.getData('noteUUID')
+  await window.electron.groupTo({noteuuid, groupuuid})
   refreshList()
 }
 
@@ -389,6 +395,7 @@ onBeforeUnmount(() => {
     }
     .add-button {
       margin-top: auto;
+      margin-bottom: 7px;
     }
   }
 
@@ -418,11 +425,19 @@ onBeforeUnmount(() => {
 .group-list {
   margin: 0.3em 0;
   border-radius: 10px;
+  height: 64%;
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: 0px;  /* 隐藏垂直滚动条 */
+    height: 0px;  /* 隐藏水平滚动条 */
+  }
   .group-list-item {
     border-radius: 7px;
+    margin: 4px 0;
     // padding: 2px;
     :hover {
       background-color: #f0f0f0;
+      border-radius: 7px;
     }
     .groupList-item {
       cursor: default;
@@ -463,20 +478,20 @@ onBeforeUnmount(() => {
     font-size: 0.8em;
   }
   .itemList-title {
-    margin-right: 3px;
+    margin-right: 1em;
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    max-width: 6em;
-    font-size: 0.8em;
+    max-width: 5em;
+    font-size: 1em;
   }
   .itemList-content {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    max-width: 7em;
-    font-size: 0.8em;
+    max-width: 6em;
+    font-size: 1em;
   }
   .list-item-time {
     display: flex;

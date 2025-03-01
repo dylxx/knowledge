@@ -1,6 +1,8 @@
 // init.js
 const fs = require('fs');
+const { app } = require('electron');
 const path = require('path');
+// const query = require('./database.js')
 let config = {}
 function init() {
   // 初始化操作, 创建文件
@@ -34,7 +36,6 @@ function createFile() {
     fs.writeFileSync(groupPath, '[]', 'utf8');
   }
 }
-
 
 module.exports = {
   init,

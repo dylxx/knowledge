@@ -4,41 +4,22 @@ const {getConfig} = require('./init')
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid')
+const {query, runDb} = require('./database.js')
 
 function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
   if (win) {
     console.log(size);
-    
     win.setSize(size.width, size.height)  // 调整窗口宽度为400，高度为动态计算的值
   }
 }
 
-function  onSearch(event, filter) {
+const onSearch = async (event, filter) => {
   const config = getConfig()
-  const dataList = getAllNote()
-  let count = 0;
-  const resultList = [];
-  // 计算分页的起始位置
+  const total =  await query('getNoteTotal', {})
   const startIndex = (filter.page - 1) * config.pageSize;
-  
-  // 遍历数组并进行模糊匹配
-  for (let i = startIndex; i < dataList.length; i++) {
-    const item = dataList[i];
-    console.log('filter.keyword: ', filter.keyword);
-    
-    // 如果匹配关键字
-    if (item.title.includes(filter.keyword) || item.content.includes(filter.keyword)) {
-      // 如果当前页面还没达到最大数量
-      
-      if (count < config.pageSize) {
-        resultList.push(item);
-        count++;
-      } else {
-        break; // 如果已达到一页的数量，退出遍历
-      }
-    }
-  }
+  const resultList =  await query('getNotePage', {$pagesize:config.pageSize,$offset: startIndex})
+
   return {
     currentPage: filter.page,
     pageSize: config.pageSize,
@@ -47,42 +28,30 @@ function  onSearch(event, filter) {
   };
 }
 
-function getUngroupNote() {
-  const dataList = getAllNote()
-  return dataList.filter(note => !note.groupUUID)
+const getUngroupNote = async (event) => {
+  return await query('getNoteUnGroup', {})
 }
 
-function getGroupNote(event, groupUUID) {
-  const dataList = getAllNote()
-  return dataList.filter(note => note.groupUUID === groupUUID)
+const getGroupNote = async (event, groupuuid) => {
+  return await query('getNoteByGroupId', toParams({groupuuid}))
 }
 
-function getAllNote() {
-  const config = getConfig()
-  const jsonFilePath = path.join(config['filePath'], 'data.json'); // 假设 JSON 文件路径
-  const jsonData = fs.readFileSync(jsonFilePath, 'utf8');  // 读取 JSON 文件内容
-  return JSON.parse(jsonData).sort((a, b) => a.createtime - b.createtime);
+const getAllNote = async (event) => {
+  return await query('getAllNote', {})
 }
 
-function saveNote(event, newNote) {
-  const dataList = getAllNote()
-  let note = dataList.find(item => item.uuid === newNote.uuid)
-  
-  note.content = newNote.content
-  note.title = newNote.title
-  note.groupUUID = newNote.groupUUID
-  note.createtime = getCurrentDate()
-  updateNote(dataList)
-  return note
+const saveNote = async (event, newNote) => {
+  newNote.createtime = getCurrentDate()
+  const {title, content, createtime, uuid} = newNote
+  await runDb('saveNote', toParams({title, content, createtime, uuid}))
+  return newNote
 }
 
-function addNote(event, note) {
+const addNote = async (event, note) => {
   note.createtime = getCurrentDate()
   note.uuid = uuidv4()
-  console.log('note::::: ', note);
-  const dataList = getAllNote()
-  dataList.push(note)
-  updateNote(dataList)
+  const {uuid, title, createtime, content} = note
+  await runDb('insertNote', toParams({uuid, title, createtime, content}))
   return note
 }
 
@@ -99,83 +68,46 @@ function getCurrentDate() {
   return `${year}/${month}/${day}`;
 }
 
-function deleteNote(event, uuid) {
-  let dataList = getAllNote()
-  dataList = dataList.filter(item => item.uuid !== uuid)
-  updateNote(dataList)
-  return
+const deleteNote = async (event, uuid) => {
+  await runDb('deleteNoteByUUID', toParams({uuid}))
 }
 
-function getGroupList() {
-  const config = getConfig()
-  const jsonFilePath = path.join(config['filePath'], 'group.json'); // 假设 JSON 文件路径
-  const jsonData = fs.readFileSync(jsonFilePath, 'utf8');  // 读取 JSON 文件内容
-  return JSON.parse(jsonData).sort((a, b) => a.createtime - b.createtime);
+const getGroupList = async () => {
+  return await query('getAllGroup', {})
 }
 
-function deleteGroup(event, uuid) {
-  let groupList = getGroupList()
-  groupList = groupList.filter(group => group.uuid !== uuid)
-  let noteList = getAllNote()
-  noteList = noteList.map(note => {
-    if (note.groupUUID === uuid) note.groupUUID = ''
-    return note
-  })
-  updateGroup(groupList)
-  updateNote(noteList)
+const deleteGroup = (event, uuid) => {
+  runDb('deleteGroupByUUID', toParams({uuid}))
+  runDb('removeGroup', {$groupuuid:uuid})
 }
 
-function addGroup(event, group) {
+const addGroup = (event, group) => {
   group.uuid = uuidv4()
   group.createtime = getCurrentDate()
-  let groupList = getGroupList()
-  groupList.push(group)
-  updateGroup(groupList)
+  const {uuid, name, createtime} = group
+  runDb('insertGroup', toParams({uuid, name, createtime}))
+}
+const saveGroup = (event, newGroup) => {
+  runDb('saveGroup', {$name:newGroup.name, $createtime:getCurrentDate(), $uuid:newGroup.uuid})
 }
 
-function saveGroup(event, newGroup) {
-  let groupList = getGroupList()
-  const group = groupList.find(item => item.uuid === newGroup.uuid)
-  group.name = newGroup.name
-  const config = getConfig()
-  const jsonFilePath = path.join(config['filePath'], 'group.json');
-  const updatedData = JSON.stringify(groupList, null, 2); // 格式化输出为 2 个空格缩进
-  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+const groupTo = (event, params) => {
+  runDb('groupTo', toParams(params))
 }
 
-function groupTo(event, params) {
-  console.log('params: ', params);
-  
-  let noteList = getAllNote()
-  const note = noteList.find(item => item.uuid === params.noteUUID)
-  note.groupUUID = params.groupUUID
-  updateNote(noteList)
+const removeGroup = (event, uuid) => {
+  runDb('removeNoteGroup', toParams({uuid}))
 }
 
-function updateNote(noteList) {
-  const config = getConfig()
-  const jsonFilePath = path.join(config['filePath'], 'data.json');
-  const updatedData = JSON.stringify(noteList, null, 2); // 格式化输出为 2 个空格缩进
-  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
-}
-
-function updateGroup(groupList) {
-  const config = getConfig()
-  const jsonFilePath = path.join(config['filePath'], 'group.json');
-  const updatedData = JSON.stringify(groupList, null, 2); // 格式化输出为 2 个空格缩进
-  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
-
-}
-
-function removeGroup(event, uuid) {
-  console.log('uuid: ', uuid);
-  
-  let noteList = getAllNote()
-  noteList = noteList.map(note => {
-    if (note.uuid === uuid) note.groupUUID = ''
-    return note
-  })
-  updateNote(noteList)
+function toParams(obj) {
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) { // 确保只处理对象自身的属性
+      const newKey = `$${key}`; // 新属性名，加上 $ 符号
+      obj[newKey] = obj[key]; // 将值赋给新属性名
+      delete obj[key]; // 删除原始属性
+    }
+  }
+  return obj; // 返回修改后的对象
 }
 
 function setupIpcHandlers() {
