@@ -80,7 +80,7 @@
                 <div class="itemList-content" >{{ item.content }}</div>
               </div>
               <div class="list-item-time">
-                <span>{{ item.createtime.slice(-8) }}</span>
+                <span v-show="item.uuid !== hoverItem">{{ item.createtime.slice(-8) }}</span>
                 <a-tooltip v-if="item.uuid === hoverItem" >
                   <a-button @click.stop="deleteNote(item)" size="small" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
                   <a-button @click.stop="removeGroup(item)" size="small" type="normal" shape="circle" :icon="h(MinusCircleOutlined)" />
@@ -468,14 +468,14 @@ onBeforeUnmount(() => {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    max-width: 7em;
+    max-width: 6em;
     font-size: 0.8em;
   }
   .itemList-content {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    max-width: 8em;
+    max-width: 7em;
     font-size: 0.8em;
   }
   .list-item-time {
