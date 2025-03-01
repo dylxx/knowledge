@@ -18,7 +18,7 @@
       </div>
       <a-divider  style="margin: 0"><span style="font-size: small">group</span></a-divider>
       <div class="group-list">
-        <a-menu
+        <!-- <a-menu
           id="dddddd"
           v-model:openKeys="groupOpenKeys"
           v-model:selectedKeys="groupSelectedKeys"
@@ -29,9 +29,40 @@
           @dblclick="groupDblclick"
           :contenteditable="editGroup"
           class="group-menu"
-        ></a-menu>
+        >
+        
+      </a-menu> -->
+        <a-list size="small" bordered :data-source="groupList" :split="false" style="border: none" :locale="{emptyText: '无群组'}">
+          <template #renderItem="{ item }">
+            <div :class="{'group-list-item':true, 'selected':groupSelectedKeys[0] === item.uuid}" @mouseenter="showDeleteGroup(item.uuid)" @mouseleave="hideDeleteGroup(item.uuid)" @click="selectedGroup(item)" @dragover="onDragOver" @drop="dropNote($event, item.uuid)" >
+              <a-list-item  class="groupList-item" :contenteditable="editGroup">
+                <div style="margin: 0 5px"><AppstoreOutlined/></div>
+                <div style="display: flex; flex-direction: row">
+                  <div class="itemList-title">{{ item.name }}</div>
+                </div>
+                <div style="margin-left: auto" v-if="item.uuid === hoverGroup" >
+                  <a-tooltip>
+                    <a-popover v-model:open="visible" trigger="click" placement="right">
+                      <template #content>
+                        <a-input v-model:value="editGroupName" size="small" @keydown.enter="saveGroup(item)" @blur="saveGroup(item)"></a-input>
+                      </template>
+                      <a-button @click.stop="" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" />
+                    </a-popover>
+                    <!-- <a-button @click.stop="editGroupCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" /> -->
+                    <a-popover v-model:open="visibleDel" trigger="click" placement="right">
+                      <template #content>
+                        <a-button @click="deleteGroup(item)" size="small">确定?</a-button>
+                      </template>
+                      <a-button @click.stop="" style="font-size: 12px; margin: 0; padding: 4px" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
+                    </a-popover>
+                  </a-tooltip>
+                </div>
+              </a-list-item>
+            </div>
+          </template>
+        </a-list>
       </div>
-      <div class="add-button"><a-button><AppstoreAddOutlined/></a-button></div>
+      <div class="add-button"><a-button @click="addGroup"><AppstoreAddOutlined/></a-button></div>
     </div>
     <!-- 搜索和list -->
     <div class="item-content">
@@ -42,8 +73,8 @@
       </a-input>
       <a-list  class="main-list" size="small" bordered :data-source="noteList" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
         <template #renderItem="{ item }">
-          <div class="main-list-item" @mouseenter="showDelete(item.uuid)" @click="openEdit(item)">
-            <a-list-item  class="list-item" >
+          <div class="main-list-item" draggable="true" @dragstart="onDragStartNote($event,item)" @mouseenter="showDelete(item.uuid)" @mouseleave="hoverItem = ''" @click="openEdit(item)">
+            <a-list-item   :class="{'list-item':true,'selectedNote':editNote.uuid === item.uuid}">
               <div style="display: flex; flex-direction: row">
                 <div class="itemList-title">{{ item.title }}</div>
                 <div class="itemList-content" >{{ item.content }}</div>
@@ -52,6 +83,7 @@
                 <span>{{ item.createtime.slice(-8) }}</span>
                 <a-tooltip v-if="item.uuid === hoverItem" >
                   <a-button @click.stop="deleteNote(item)" size="small" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
+                  <a-button @click.stop="removeGroup(item)" size="small" type="normal" shape="circle" :icon="h(MinusCircleOutlined)" />
                 </a-tooltip>
               </div>
             </a-list-item>
@@ -81,25 +113,25 @@
 import { ref, reactive, watch,computed, onMounted, onBeforeUnmount, h } from "vue";
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
-import { ProfileOutlined, AppstoreOutlined, AppstoreAddOutlined, BlockOutlined, PlusCircleOutlined,EditOutlined, CloseCircleOutlined } from '@ant-design/icons-vue'
+import { MinusCircleOutlined, FormOutlined, AppstoreOutlined, AppstoreAddOutlined, BlockOutlined, PlusCircleOutlined,EditOutlined, CloseCircleOutlined } from '@ant-design/icons-vue'
 
 
 
 // data
 const router = useRouter();
 let noteList = reactive([])
-const menuOpenKeys = ref(['1']);
-const menuSelectedKeys = ref(['sub1']);
+const menuOpenKeys = ref(['allNote']);
+const menuSelectedKeys = ref(['allNote']);
 const groupOpenKeys = ref(['1']);
 const groupSelectedKeys = ref(['sub1']);
 let hoverItem = ref('')
+let hoverGroup = ref('')
 let keyword = ref('')
 let listType = reactive({
   type: 'allNote',
   groupUUID: ''
 })
 let editGroupUUID = ref('')
-
 let editNote = reactive({
   content: '',
   title: '',
@@ -107,6 +139,10 @@ let editNote = reactive({
   group: '',
   createtime: '',
 })
+let groupList = reactive([])
+let visible = ref(false)
+let visibleDel = ref(false)
+let editGroupName = ref('')
 
 const getItem = (label, key, icon, children, type) => {
   return {
@@ -124,34 +160,72 @@ const menuItems = reactive([
   getItem('所有片段', 'allNote', () => h(AppstoreOutlined), null, 'allNote'),
   getItem('未分类', 'unGroup', () => h(BlockOutlined), null, 'unGroup')
 ]);
-const groupItems = reactive([])
 // methods
+const addGroup = () => {
+  groupList.push({
+    name: '',
+    uuid: '',
+    createtime: '',
+    no: 0
+  })
+}
+
 const menuClick = (menu) => {
-  console.log('menu:', menu);
+  groupSelectedKeys.value.length = 0
+  groupOpenKeys.value.length = 0
   listType.type = menu.key
   refreshList()
 }
 
-const groupClick = (menu) => {
-  console.log('menu:', menu);
+const selectedGroup = (group) => {
   listType.type = 'group'
-  listType.groupUUID = menu.key
+  listType.key = group.uuid
+  groupSelectedKeys.value.length = 0
+  groupSelectedKeys.value.push(group.uuid)
+  menuOpenKeys.value.length = 0
+  menuSelectedKeys.value.length = 0
+  console.log(123);
+  
   refreshList()
 }
 
-const groupDblclick = () => {
-  editGroupUUID.value = groupSelectedKeys.value[0]
-  console.log('editGroupUUID: ', groupSelectedKeys.value[0]);
-  
+const saveGroup = async (group) => {
+  visible = false
+  if (!editGroupName.value) return
+  group.name = editGroupName.value
+  // editGroupName.value = ''
+  if (group.uuid) {
+    const newGroup = await window.electron.saveGroup({...group})
+  } else {
+    const newGroup = await window.electron.addGroup({...group})
+    getGroupList()
+  }
+  editGroupName.value = ''
+}
+
+const deleteGroup = async (group) => {
+  visibleDel = false
+  await window.electron.deleteGroup(group.uuid)
+  getGroupList()
+}
+
+const editGroupCli = () => {
+  editGroupUUID.value = hoverGroup.value
 }
 
 const showDelete = (noteUUID) => {
   hoverItem.value = noteUUID
 }
+const showDeleteGroup = (groupUUID) => {
+  hoverGroup.value = groupUUID
+}
+const hideDeleteGroup = () => {
+  // hoverGroup.value = ''
+  editGroupUUID.value = ''
+}
 const refreshList = async () => {
   noteList.length = 0
   let list = []
-  console.log('listType: ', listType);
   if (listType.type === 'allNote') {
     list = await window.electron.getAllNote()
   } else if (listType.type === 'unGroup') {
@@ -159,34 +233,32 @@ const refreshList = async () => {
   } else if (listType.type === 'group') {
     list = await window.electron.getGroupNote(listType.key)
   }
-  console.log('list::::', list);
   
   noteList.push(...list)
 }
+
 
 // 打开新的编辑
 const openNewEdit = () => {
   editNote.content = ''
   editNote.title = '编辑标题'
-  editNote.group = ''
+  editNote.groupUUID = ''
   editNote.createtime = ''
   editNote.uuid = ''
 }
 // 添加笔记
 const addNote = () => {
-  console.log('添加笔记');
 }
 const openEdit = (note) => {
   editNote.content = note.content
   editNote.title = note.title
-  editNote.group = note.group
+  editNote.groupUUID = note.groupUUID
   editNote.createtime = note.createtime
   editNote.uuid = note.uuid
 }
 const saveNote = async () => {
   if (!editNote.content || !editNote.title) return
   const note = {...editNote}
-  console.log('note: ', note.content);
   // 新增/更新
   if (!editNote.uuid) {
     const result = await window.electron.addNote(note)
@@ -198,12 +270,29 @@ const saveNote = async () => {
   refreshList()
 }
 const deleteNote = async (note) => {
-  const uuid = note.uuid
-  await window.electron.deleteNote(uuid)
+  await window.electron.deleteNote(note.uuid)
   refreshList()
   if (note.uuid === editNote.uuid) {
     openNewEdit()
   }
+}
+
+const removeGroup = async (note) => {
+  await window.electron.removeGroup(note.uuid)
+  refreshList()
+}
+
+const onDragStartNote = (event, note) => {
+  event.dataTransfer.setData('noteUUID', note.uuid)
+}
+const onDragOver = (event) => {
+  event.preventDefault() // 必须阻止默认行为，否则drop事件不会触发
+}
+
+const dropNote = async (event, groupUUID) => {
+  const noteUUID = event.dataTransfer.getData('noteUUID')
+  await window.electron.groupTo({noteUUID, groupUUID})
+  refreshList()
 }
 
 // 监听键盘按下事件
@@ -219,18 +308,14 @@ const backHome = () => {
 }
 
 const getGroupList = async () => {
-  const gropuList = await window.electron.getGroupList()
-  groupItems.length = 0
-  gropuList.map(group => {
-    groupItems.push(getItem(group.name, group.uuid,() => h(ProfileOutlined),null, group.uuid ))
-  })
-  console.log('groupItems::::', groupItems);
-  
+  groupList.length = 0
+  const list = await window.electron.getGroupList()
+  groupList.push(...list)
 }
 
 // 计算属性
 const editGroup = computed(() => {
-  return editGroupUUID === groupSelectedKeys[0]
+  return editGroupUUID.value === hoverGroup.value
 });
 
 onMounted(() => {
@@ -290,7 +375,7 @@ onBeforeUnmount(() => {
   .group-content {
     display: flex;
     flex-direction: column;
-    width: 15%;
+    width: 17%;
     height: 100%;
     min-width: 100px;
     .title-name {
@@ -302,18 +387,13 @@ onBeforeUnmount(() => {
       margin: 0.3em 0;
       border-radius: 10px;
     }
-    .group-list {
-      margin: 0.3em 0;
-      border-radius: 10px;
-
-    }
     .add-button {
       margin-top: auto;
     }
   }
 
   .item-content {
-    width: 25%;
+    width: 27%;
     margin: 5px 2px;
     background-color: #f0f5ff;
     .main-list {
@@ -325,8 +405,8 @@ onBeforeUnmount(() => {
       }
       margin: 4px;
       .main-list-item{
+        border-radius: 6px;
         :hover {
-          border-radius: 6px;
           background-color: #c2d5ff;
         }
       }
@@ -334,14 +414,51 @@ onBeforeUnmount(() => {
   }
   // -webkit-app-region: drag;
 }
+
+.group-list {
+  margin: 0.3em 0;
+  border-radius: 10px;
+  .group-list-item {
+    border-radius: 7px;
+    // padding: 2px;
+    :hover {
+      background-color: #f0f0f0;
+    }
+    .groupList-item {
+      cursor: default;
+      display: flex;
+      justify-content: start;
+      height: 32px;
+      margin-right: 0;
+      padding-right: 0;
+      div {
+        margin-left: 4px;
+      }
+    }
+  }
+}
+
+.selected {
+  background-color: #e6f4ff !important;
+  :hover {
+    background-color: #e6f4ff !important;
+  }
+}
+.selectedNote {
+  background-color: #c2d5ff !important;
+  :hover {
+    background-color: #c2d5ff !important;
+  }
+}
 .list-item {
-  padding: 4px 8px;
+  padding-right: 0;
   background-color: #dfe4f9;
   border-radius: 6px;
   margin: 4px;
   display: flex;
   flex-direction: row;
   justify-content:space-between;
+  height: 34px;
   span {
     font-size: 0.8em;
   }
@@ -371,7 +488,7 @@ onBeforeUnmount(() => {
   }
 }
 .edit-div {
-  width: 55%;
+  width: 51%;
   height: 100%;
   input {
     font:  bold 1.5em/1.5 'Arial', sans-serif;
@@ -398,8 +515,9 @@ onBeforeUnmount(() => {
     }
   }
 }
-
-
+input, textarea {
+  spellcheck: false;
+}
 
 </style>
   

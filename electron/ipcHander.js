@@ -49,7 +49,7 @@ function  onSearch(event, filter) {
 
 function getUngroupNote() {
   const dataList = getAllNote()
-  return dataList.filter(note => !note.group)
+  return dataList.filter(note => !note.groupUUID)
 }
 
 function getGroupNote(event, groupUUID) {
@@ -65,20 +65,14 @@ function getAllNote() {
 }
 
 function saveNote(event, newNote) {
-  const config = getConfig()
-  const jsonFilePath = path.join(config['filePath'], 'data.json');
   const dataList = getAllNote()
-  console.log('note1: ', dataList);
   let note = dataList.find(item => item.uuid === newNote.uuid)
   
   note.content = newNote.content
   note.title = newNote.title
-  note.group = newNote.group
+  note.groupUUID = newNote.groupUUID
   note.createtime = getCurrentDate()
-  note.uuid = newNote.uuid;
-  const updatedData = JSON.stringify(dataList, null, 2); // 格式化输出为 2 个空格缩进
-  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
-  console.log('文件已更新');
+  updateNote(dataList)
   return note
 }
 
@@ -86,13 +80,9 @@ function addNote(event, note) {
   note.createtime = getCurrentDate()
   note.uuid = uuidv4()
   console.log('note::::: ', note);
-  
   const dataList = getAllNote()
   dataList.push(note)
-  const config = getConfig()
-  const jsonFilePath = path.join(config['filePath'], 'data.json');
-  const updatedData = JSON.stringify(dataList, null, 2); // 格式化输出为 2 个空格缩进
-  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+  updateNote(dataList)
   return note
 }
 
@@ -112,11 +102,8 @@ function getCurrentDate() {
 function deleteNote(event, uuid) {
   let dataList = getAllNote()
   dataList = dataList.filter(item => item.uuid !== uuid)
-  const config = getConfig()
-  const jsonFilePath = path.join(config['filePath'], 'data.json');
-  const updatedData = JSON.stringify(dataList, null, 2); // 格式化输出为 2 个空格缩进
-  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
-  return note
+  updateNote(dataList)
+  return
 }
 
 function getGroupList() {
@@ -129,10 +116,13 @@ function getGroupList() {
 function deleteGroup(event, uuid) {
   let groupList = getGroupList()
   groupList = groupList.filter(group => group.uuid !== uuid)
-  const config = getConfig()
-  const jsonFilePath = path.join(config['filePath'], 'group.json');
-  const updatedData = JSON.stringify(groupList, null, 2); // 格式化输出为 2 个空格缩进
-  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+  let noteList = getAllNote()
+  noteList = noteList.map(note => {
+    if (note.groupUUID === uuid) note.groupUUID = ''
+    return note
+  })
+  updateGroup(groupList)
+  updateNote(noteList)
 }
 
 function addGroup(event, group) {
@@ -140,19 +130,52 @@ function addGroup(event, group) {
   group.createtime = getCurrentDate()
   let groupList = getGroupList()
   groupList.push(group)
+  updateGroup(groupList)
+}
+
+function saveGroup(event, newGroup) {
+  let groupList = getGroupList()
+  const group = groupList.find(item => item.uuid === newGroup.uuid)
+  group.name = newGroup.name
   const config = getConfig()
   const jsonFilePath = path.join(config['filePath'], 'group.json');
   const updatedData = JSON.stringify(groupList, null, 2); // 格式化输出为 2 个空格缩进
   fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
 }
 
-function saveGroup(event, newGroup) {
-  let groupList = getGroupList()
-  const group = groupList.find(item => item.uuid = group.uuid)
-  group.name = newGroup.name
+function groupTo(event, params) {
+  console.log('params: ', params);
+  
+  let noteList = getAllNote()
+  const note = noteList.find(item => item.uuid === params.noteUUID)
+  note.groupUUID = params.groupUUID
+  updateNote(noteList)
+}
+
+function updateNote(noteList) {
+  const config = getConfig()
+  const jsonFilePath = path.join(config['filePath'], 'data.json');
+  const updatedData = JSON.stringify(noteList, null, 2); // 格式化输出为 2 个空格缩进
+  fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+}
+
+function updateGroup(groupList) {
+  const config = getConfig()
   const jsonFilePath = path.join(config['filePath'], 'group.json');
   const updatedData = JSON.stringify(groupList, null, 2); // 格式化输出为 2 个空格缩进
   fs.writeFileSync(jsonFilePath, updatedData, 'utf8');
+
+}
+
+function removeGroup(event, uuid) {
+  console.log('uuid: ', uuid);
+  
+  let noteList = getAllNote()
+  noteList = noteList.map(note => {
+    if (note.uuid === uuid) note.groupUUID = ''
+    return note
+  })
+  updateNote(noteList)
 }
 
 function setupIpcHandlers() {
@@ -168,7 +191,9 @@ function setupIpcHandlers() {
   ipcMain.handle('deleteGroup',  deleteGroup)
   ipcMain.handle('addGroup',  addGroup)
   ipcMain.handle('saveGroup',  saveGroup)
-
+  ipcMain.handle('groupTo',  groupTo)
+  ipcMain.handle('removeGroup',  removeGroup)
+  
 }
 
 module.exports = {

@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('electron', {
   deleteGroup: (uuid) => ipcRenderer.invoke('deleteGroup', uuid),
   addGroup: (group) => ipcRenderer.invoke('addGroup', group),
   saveGroup: (group) => ipcRenderer.invoke('saveGroup',group),
+  groupTo: (params) => ipcRenderer.invoke('groupTo',params),
+  removeGroup: (uuid) => ipcRenderer.invoke('removeGroup',uuid),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

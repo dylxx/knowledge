@@ -2,14 +2,17 @@
   <div class="main-content" ref="mainContent">
     <a-space class="input-search">
       <a-button @click="gotoManage" size="small"><SettingOutlined /></a-button>
-      <a-input size="small" v-model:value="searchInput" @input="onSearch" >
+      <a-input size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copyFirst">
       </a-input>
     </a-space>
     <div><span class="desc-text">知识库软件 | dylink</span></div>
-    <a-list class="main-list" size="small" bordered :data-source="dataList" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
+    <a-list v-show="dataList.length" class="main-list" size="small" bordered :data-source="dataList" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
       <template #renderItem="{ item }">
         <div class="list-item" @click="copyContent(item)">
-          <a-list-item>{{ item.title }}</a-list-item>
+          <a-list-item>
+            <div style="font:  bold 0.8em/1.5 'Arial', sans-serif;">{{ item.title }}</div>
+            <div class="note-content">{{ item.content }}</div>
+          </a-list-item>
         </div>
       </template>
     </a-list>
@@ -57,6 +60,12 @@ const copyContent = async (note) => {
   await navigator.clipboard.writeText(note.content)
 }
 
+const copyFirst = async () => {
+  if (!dataList.length) return
+  const text = dataList[0].content
+  await navigator.clipboard.writeText(text)
+}
+
 
 onMounted(() => {
 
@@ -97,7 +106,7 @@ h1 {
   margin: 1em auto;
 }
 .main-content {
-  width: 220px;
+  width: 300px;
   margin: 0 auto;
   -webkit-app-region: drag;
   .input-search {
@@ -111,6 +120,9 @@ h1 {
     border-radius: 10px;
     button {
       margin: 0;
+    }
+    input {
+      width: 250px;
     }
   }
   .main-list {
@@ -128,6 +140,14 @@ h1 {
     background-color: #D2DAFF;
     border-radius: 10px;
   }
+}
+
+.note-content {
+  text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 8em;
+    font-size: 0.9em;
 }
 </style>
   
