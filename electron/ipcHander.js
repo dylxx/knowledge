@@ -1,10 +1,10 @@
 // ipcHandler.js
-const { ipcMain, BrowserWindow } = require('electron')
+const { ipcMain, BrowserWindow, ipcRenderer } = require('electron')
 const {getConfig} = require('./init')
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid')
-const {query, runDb} = require('./database.js')
+const {query, runDb, execSql} = require('./database.js')
 
 function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
@@ -12,6 +12,11 @@ function resizeWindow(event, size) {
     console.log(size);
     win.setSize(size.width, size.height)  // 调整窗口宽度为400，高度为动态计算的值
   }
+}
+
+function getWindowSize() {
+  const win = BrowserWindow.getFocusedWindow()
+  return win.getSize()
 }
 
 const onSearch = async (event, filter) => {
@@ -41,32 +46,37 @@ const getAllNote = async (event) => {
 }
 
 const saveNote = async (event, newNote) => {
-  newNote.createtime = getCurrentDate()
+  newNote.createtime = getCurrentTime()
   const {title, content, createtime, uuid} = newNote
   await runDb('saveNote', toParams({title, content, createtime, uuid}))
   return newNote
 }
 
 const addNote = async (event, note) => {
-  note.createtime = getCurrentDate()
+  note.createtime = getCurrentTime()
   note.uuid = uuidv4()
   const {uuid, title, createtime, content} = note
   await runDb('insertNote', toParams({uuid, title, createtime, content}))
   return note
 }
 
+function getCurrentTime() {
+  const now = new Date();
 
-function getCurrentDate() {
-  const today = new Date();
+  // 获取年、月、日、时、分、秒
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始，需要加 1
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
 
-  // 获取年份、月份和日期
-  const year = today.getFullYear();
-  const month = (today.getMonth() + 1).toString().padStart(2, '0');  // 月份从 0 开始，所以加 1
-  const day = today.getDate().toString().padStart(2, '0');
-
-  // 格式化日期为 'YYYY/MM/DD'
-  return `${year}/${month}/${day}`;
+  // 拼接成目标格式
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
+
+console.log(getCurrentTime());
+// 输出: '2023-10-05 14:30:45'（根据当前时间）
 
 const deleteNote = async (event, uuid) => {
   await runDb('deleteNoteByUUID', toParams({uuid}))
@@ -83,12 +93,12 @@ const deleteGroup = (event, uuid) => {
 
 const addGroup = (event, group) => {
   group.uuid = uuidv4()
-  group.createtime = getCurrentDate()
+  group.createtime = getCurrentTime()
   const {uuid, name, createtime} = group
   runDb('insertGroup', toParams({uuid, name, createtime}))
 }
 const saveGroup = (event, newGroup) => {
-  runDb('saveGroup', {$name:newGroup.name, $createtime:getCurrentDate(), $uuid:newGroup.uuid})
+  runDb('saveGroup', {$name:newGroup.name, $createtime:getCurrentTime(), $uuid:newGroup.uuid})
 }
 
 const groupTo = (event, params) => {
@@ -97,6 +107,12 @@ const groupTo = (event, params) => {
 
 const removeGroup = (event, uuid) => {
   runDb('removeNoteGroup', toParams({uuid}))
+}
+
+const search = async (evnet, params) => {
+  const list =  await query(params.name, toParams(params.params))
+  console.log('list:::--', list);
+  return list
 }
 
 function toParams(obj) {
@@ -110,7 +126,15 @@ function toParams(obj) {
   return obj; // 返回修改后的对象
 }
 
+const mainSearch = async (event, keywords) => {
+  const conditions = keywords.map(() => `title || ' ' || content LIKE ?`).join(' AND ');
+  const sql = `SELECT * FROM notes WHERE ${conditions}`;
+  const params = keywords.map(keyword => `%${keyword}%`);
+  return await execSql(sql, params)
+}
+
 function setupIpcHandlers() {
+  ipcMain.handle('getWindowSize', getWindowSize)
   ipcMain.handle('resize-window', resizeWindow)
   ipcMain.handle('getUngroupNote',  getUngroupNote)
   ipcMain.handle('getAllNote',  getAllNote)
@@ -125,6 +149,8 @@ function setupIpcHandlers() {
   ipcMain.handle('saveGroup',  saveGroup)
   ipcMain.handle('groupTo',  groupTo)
   ipcMain.handle('removeGroup',  removeGroup)
+  ipcMain.handle('search',  search)
+  ipcMain.handle('mainSearch',  mainSearch)
   
 }
 

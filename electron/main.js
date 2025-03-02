@@ -27,9 +27,20 @@ const createWindow = () => {
     win.loadFile('./dist/index.html')
     // win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
+  tray = new Tray(path.join(__dirname, 'icon.png'));
+  tray.setToolTip('note');
   // win.setSkipTaskbar(true) // 隐藏任务栏图标
   globalShortcut.register('Control+Shift+I', () => {
     win.webContents.openDevTools();
+  });
+  globalShortcut.register('Alt+Alt', () => {
+    if (isHidden) {
+      mainWindow.show();
+      isHidden = false;
+    } else {
+      mainWindow.hide();
+      isHidden = true;
+    }
   });
   // win.webContents.openDevTools()
   win.on('closed', () => {

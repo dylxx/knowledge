@@ -6,7 +6,7 @@
       </a-input>
     </a-space>
     <div><span class="desc-text">知识库软件 | dylink</span></div>
-    <a-list v-show="dataList.length" class="main-list" size="small" bordered :data-source="dataList" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
+    <a-list v-show="dataList.list.length" class="main-list" size="small" bordered :data-source="dataList.list" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
       <template #renderItem="{ item }">
         <div class="list-item" @click="copyContent(item)">
           <a-list-item>
@@ -28,22 +28,19 @@ import FileUpload from "./FileUpload.vue";
 import { SettingOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
+import anime from 'animejs';
 
 // 数据
 let searchInput = ref("");
-let dataList = reactive([])
+let dataList = reactive({list: []})
 const mainContent = ref(null)
 const router = useRouter();
 // methods
 // 搜索框
 const onSearch =  debounce(async () => {
-  dataList.length = 0
   if (!searchInput.value) return
-  console.log('searchInput: ', searchInput.value);
-  const result = await window.electron.onSearch({keyword: searchInput.value, page: 1})
-  dataList.push(...result.list)
-  // dataList.push(...fakeList.filter(item => item.label.includes(searchInput.value))) 
-  console.log('datalist: ', dataList.length);
+  const resList = await window.electron.mainSearch(searchInput.value.split(' '))
+  dataList.list = resList
   
 }, 300);
 
@@ -61,8 +58,8 @@ const copyContent = async (note) => {
 }
 
 const copyFirst = async () => {
-  if (!dataList.length) return
-  const text = dataList[0].content
+  if (!dataList.list.length) return
+  const text = dataList.list[0].content
   await navigator.clipboard.writeText(text)
 }
 
@@ -78,8 +75,7 @@ onBeforeUnmount(() => {
 onMounted(() => {
   if (mainContent.value) {
     const resizeObserver = new ResizeObserver(entries => {
-      entries.forEach(entry => {
-        // const size = {width: 500.1231232132, height: 300}
+      entries.forEach(async entry => {
         const size = {width: Math.ceil(entry.contentRect.width) + 20, height: Math.ceil(entry.contentRect.height) + 30}
         console.log('新的宽度:', size.width, '新的高度:', size.height)
         window.electron.resizeWindow(size)
@@ -110,7 +106,6 @@ h1 {
   margin: 0 auto;
   -webkit-app-region: drag;
   .input-search {
-    -webkit-app-region: no-drag;
     background-color: #B1B2FF;
     display: flex;
     flex-direction: row;
@@ -119,9 +114,11 @@ h1 {
     padding: 0.5em;
     border-radius: 10px;
     button {
+      -webkit-app-region: no-drag;
       margin: 0;
     }
     input {
+      -webkit-app-region: no-drag;
       width: 250px;
     }
   }

@@ -12,7 +12,7 @@ const sqls = {
   insertGroup: {method: 'run', sql: 'insert into groups(uuid, name, createtime) values($uuid, $name, $createtime)'},
   deleteGroupByUUID: {method: 'run', sql: 'delete from groups where uuid = $uuid'},
   deleteNoteByUUID: {method: 'run', sql: 'delete from notes where uuid = $uuid'},
-  getNoteByGroupId: {method: 'all', sql: 'select * from notes where groupuuid = $groupuuid'},
+  getNoteByGroupId: {method: 'all', sql: 'select * from notes where groupuuid = $groupuuid order by createtime desc'},
   removeGroup: {method: 'run', sql:  `update notes set groupuuid = '' where groupuuid = $groupuuid`},
   removeNoteGroup: {method: 'run', sql:  `update set notes groupuuid = '' where uuid = $uuid`},
   saveGroup: {method: 'run', sql: `update groups set name=$name,createtime=$createtime where uuid = $uuid`},
@@ -23,16 +23,26 @@ const sqls = {
     method: 'all',
     sql:`SELECT *
     FROM notes
-    WHERE groupuuid IS NULL OR groupuuid = '';`
+    WHERE groupuuid IS NULL OR groupuuid = ''
+    order by createtime desc;`
   },
   // 分页查询note
   getNotePage: {
     method: 'all',
     sql:`SELECT *
       FROM notes
-      LIMIT $pagesize OFFSET $offset;`
+
+      LIMIT $pagesize OFFSET $offset
+      order by createtime desc;`
   },
   getNoteTotal: {method: 'get', sql: 'SELECT COUNT(*) as total FROM notes'},
+  getNoteSearch: {
+    method: 'all',
+    sql:`SELECT *
+    FROM notes
+    WHERE title like $keyword or content like $keyword
+    order by createtime desc;`
+  }
 }
 
 // 创建数据库连接
@@ -131,6 +141,20 @@ const query = async (name, params) => {
   }
 }
 
+const execSql = async (sql, params) => {
+  console.log('sql: ', sql);
+  console.log('params: ', params);
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, function (err, rows) {
+      if (err) {
+        reject(err);  // 发生错误时拒绝 Promise
+      } else {
+        resolve(rows);  // 执行成功时解析 Promise
+      }
+    });
+  });
+}
+
 // 关闭数据库连接
 function closeDB() {
   db.close((err) => {
@@ -148,5 +172,6 @@ initDB();
 module.exports = {
   query,
   runDb,
+  execSql,
   closeDB
 };

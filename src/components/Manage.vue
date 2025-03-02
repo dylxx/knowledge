@@ -32,7 +32,7 @@
                       <template #content>
                         <a-input v-model:value="editGroupName" size="small" @keydown.enter="saveGroup(item)" @blur="saveGroup(item)"></a-input>
                       </template>
-                      <a-button @click.stop="visible = !visible" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" />
+                      <a-button @click.stop=" groupNameCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" />
                     </a-popover>
                     <!-- <a-button @click.stop="editGroupCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" /> -->
                     <a-popover v-model:open="visibleDel" trigger="click" placement="right">
@@ -52,7 +52,7 @@
     </div>
     <!-- 搜索和list -->
     <div class="item-content">
-      <a-input v-model="keyword" size="small">
+      <a-input style="width: 254px;margin-top: 10px;" v-model:value="keyword" size="small" @keydown.enter="searchList">
         <template #suffix>
           <PlusCircleOutlined @click="openNewEdit" />
         </template>
@@ -79,7 +79,7 @@
     </div>
     <!-- 编辑栏 -->
     <div class="edit-div">
-      <div v-if="editNote.title">
+      <div v-if="editNote.title || editNote.content">
         <div class="edit-title">
           <a-input @blur="saveNote" style="font: italic small-caps bold 16px/1.5 " v-model:value="editNote.title" :bordered="false" placeholder="标题" />
         </div>
@@ -148,10 +148,15 @@ const menuItems = reactive([
   getItem('未分类', 'unGroup', () => h(BlockOutlined), null, 'unGroup')
 ]);
 // methods
-const doNothing = (text) => {
-  console.log('点击了:::::', text);
-  
-  return null
+const searchList = async () => {
+  const list = await window.electron.search({name:'getNoteSearch', params: {keyword: `%${keyword.value}%`}})
+  console.log('list:::::', list);
+  noteList.length = 0
+  noteList.push(...list)
+}
+const groupNameCli = (item) => {
+  visible.value = !visible
+  editGroupName.value = item.name
 }
 const addGroup = () => {
   groupList.push({
@@ -223,6 +228,8 @@ const showDelete = (noteUUID) => {
 }
 const showDeleteGroup = (groupUUID) => {
   hoverGroup.value = groupUUID
+  visible.value = false
+  visibleDel.value = false
 }
 const hideDeleteGroup = () => {
   // hoverGroup.value = ''
@@ -245,7 +252,7 @@ const refreshList = async () => {
 
 // 打开新的编辑
 const openNewEdit = () => {
-  editNote.content = ''
+  editNote.content = '-'
   editNote.title = '编辑标题'
   editNote.groupUUID = ''
   editNote.createtime = ''
@@ -446,8 +453,25 @@ onBeforeUnmount(() => {
       height: 32px;
       margin-right: 0;
       padding-right: 0;
+      padding-left: 0;
       div {
         margin-left: 4px;
+      }
+    }
+    
+    .itemList-title {
+      margin-right: 1em;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      max-width: 9em;
+      font-size: 1em;
+    }
+    
+    &:hover {
+      .itemList-title {
+        max-width: 5em;
       }
     }
   }
