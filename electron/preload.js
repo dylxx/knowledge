@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('electron', {
   removeGroup: (uuid) => ipcRenderer.invoke('removeGroup',uuid),
   search: (params) => ipcRenderer.invoke('search',params),
   mainSearch: (keywords) => ipcRenderer.invoke('mainSearch',keywords),
+  getConfig:() => ipcRenderer.invoke('getConfig'),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

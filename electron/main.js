@@ -1,12 +1,15 @@
 
-const { app, BrowserWindow, Menu, globalShortcut, ipcMain } = require('electron')
+const { app, BrowserWindow, Menu, globalShortcut,Tray } = require('electron')
 const {setupIpcHandlers} = require('./ipcHander')
-const {init} = require('./init')
 const path = require('path')
+
+let tray;
+let isHidden = false;
 const createWindow = () => {
   let win = new BrowserWindow({
     width: 320,
     height: 96,
+    icon: path.join(__dirname, '../public/no.ico'),
     // alwaysOnTop: true,  // 确保窗口始终在最前面
     frame: false,
     backgroundColor: '#0000000',
@@ -27,18 +30,48 @@ const createWindow = () => {
     win.loadFile('./dist/index.html')
     // win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
-  tray = new Tray(path.join(__dirname, 'icon.png'));
+  
+  tray = new Tray(path.join(__dirname, '../public/no.ico'),);
   tray.setToolTip('note');
+
+  // 设置托盘右键菜单
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示窗口',
+      click: () => {
+        win.show();
+        isHidden = false;
+      }
+    },
+    {
+      label: '退出',
+      click: () => {
+        app.quit(); // 退出应用
+      }
+    }
+  ]);
+  tray.setContextMenu(contextMenu);
+
+  // 监听双击托盘图标，显示/隐藏窗口
+  tray.on('double-click', () => {
+    if (isHidden) {
+      win.show();
+      isHidden = false;
+    } else {
+      win.hide();
+      isHidden = true;
+    }
+  });
   // win.setSkipTaskbar(true) // 隐藏任务栏图标
   globalShortcut.register('Control+Shift+I', () => {
     win.webContents.openDevTools();
   });
-  globalShortcut.register('Alt+Alt', () => {
+  globalShortcut.register('Alt+c', () => {
     if (isHidden) {
-      mainWindow.show();
+      win.show();
       isHidden = false;
     } else {
-      mainWindow.hide();
+      win.hide();
       isHidden = true;
     }
   });
@@ -56,48 +89,11 @@ const createWindow = () => {
       app.quit();
     }
   });
-  // win.loadURL('http://localhost:3000')
 }
-
-// 处理文件转码
-ipcMain.on('start-conversion', (event, filePath) => {
-  
-  console.log('filePath:', filePath);
-  
-  const outputDir = path.dirname(filePath); // 获取文件所在目录
-  const outputFileName = path.basename(filePath, path.extname(filePath)) + '-converted.mp4';
-  const outputFile = join(outputDir, outputFileName);
-
-  // 使用 FFmpeg 转码文件
-  ffmpeg(filePath)
-    .output(outputFile)
-    .on('end', () => {
-      console.log('转码完成');
-      // 发送转码后的文件路径给渲染进程
-      event.reply('conversion-complete', `file://${outputFile}`);
-    })
-    .on('error', (err) => {
-      console.error('转码失败:', err);
-      event.reply('conversion-complete', '转码失败');
-    })
-    .run();
-});
-
-// 接收预加载脚本发送的路径，再转发到渲染进程
-ipcMain.on('ondrop', (event, paths) => {
-  console.log('paths', paths);
-  
-  const win = BrowserWindow.getAllWindows()[0];
-  if (win) {
-    win.webContents.send('ondrop-reply', paths);
-  }
-});
-
 
 app.whenReady().then(() => {
   createWindow()
   setupIpcHandlers()
-  init()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

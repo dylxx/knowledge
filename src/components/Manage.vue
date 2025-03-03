@@ -4,51 +4,66 @@
     <!-- 左侧导航栏 -->
     <div class="group-content">
       <!-- <span class="title-name">快捷操作</span> -->
-      <a-divider style="margin: 0;"><span style="font-size: small">menu</span></a-divider>
-      <div class="group-menu">
-        <a-menu
-          id="dddddd"
-          v-model:openKeys="menuOpenKeys"
-          v-model:selectedKeys="menuSelectedKeys"
-          style="width: 100%"
-          mode="inline"
-          :items="menuItems"
-          @click="menuClick"
-        ></a-menu>
+      <div class="operate-area">
+        <SettingOutlined @click="showSettingPage=!showSettingPage" :class="{active:showSettingPage}"/>
+        <AppstoreAddOutlined/>
+        <RollbackOutlined @click="router.push('/')" />
       </div>
-      <a-divider  style="margin: 0"><span style="font-size: small">group</span></a-divider>
-      <div class="group-list" ref="groupListDiv">
-        <a-list size="small" bordered :data-source="groupList" :split="false" style="border: none" :locale="{emptyText: '无群组'}">
-          <template #renderItem="{ item }">
-            <div :class="{'group-list-item':true, 'selected':groupSelectedKeys[0] === item.uuid}" @mouseenter="showDeleteGroup(item.uuid)" @mouseleave="hideDeleteGroup(item.uuid)" @click="selectedGroup(item)" @dragover="onDragOver" @drop="dropNote($event, item.uuid)" >
-              <a-list-item  class="groupList-item" :contenteditable="editGroup">
-                <div style="margin: 0 5px"><AppstoreOutlined/></div>
-                <div style="display: flex; flex-direction: row">
-                  <div class="itemList-title">{{ item.name }}</div>
-                </div>
-                <div style="margin-left: auto" v-if="item.uuid === hoverGroup" >
-                  <a-tooltip>
-                    <a-popover v-model:open="visible" trigger="click" placement="right">
-                      <template #content>
-                        <a-input v-model:value="editGroupName" size="small" @keydown.enter="saveGroup(item)" @blur="saveGroup(item)"></a-input>
-                      </template>
-                      <a-button @click.stop=" groupNameCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" />
-                    </a-popover>
-                    <!-- <a-button @click.stop="editGroupCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" /> -->
-                    <a-popover v-model:open="visibleDel" trigger="click" placement="right">
-                      <template #content>
-                        <a-button @click="deleteGroup(item)" size="small">确定?</a-button>
-                      </template>
-                      <a-button @click.stop="visibleDel = !visibleDel" style="font-size: 12px; margin: 0; padding: 4px" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
-                    </a-popover>
-                  </a-tooltip>
-                </div>
-              </a-list-item>
-            </div>
-          </template>
-        </a-list>
+      <div v-if="showSettingPage">
+        <Setting/>
       </div>
-      <div class="add-button"><a-button @click="addGroup"><AppstoreAddOutlined/></a-button></div>
+      <div v-else style="height: 100%">
+        <a-divider style="margin: 0;"><span style="font-size: small">menu</span></a-divider>
+        <div class="group-menu">
+          <a-menu
+            id="dddddd"
+            v-model:openKeys="menuOpenKeys"
+            v-model:selectedKeys="menuSelectedKeys"
+            style="width: 100%"
+            mode="inline"
+            :items="menuItems"
+            @click="menuClick"
+          ></a-menu>
+        </div>
+        <a-divider  style="margin: 0"><span style="font-size: small">group</span></a-divider>
+        <div class="group-list" ref="groupListDiv">
+          <a-list size="small" bordered :data-source="groupList" :split="false" style="border: none" :locale="{emptyText: '无群组'}">
+            <template #renderItem="{ item }">
+              <div :class="{'group-list-item':true, 'selected':groupSelectedKeys[0] === item.uuid}" @mouseenter="showDeleteGroup(item.uuid)" @mouseleave="hideDeleteGroup(item.uuid)" @click="selectedGroup(item)" @dragover="onDragOver" @drop="dropNote($event, item.uuid)" >
+                <a-list-item  class="groupList-item" :contenteditable="editGroup">
+                  <div style="margin: 0 5px"><AppstoreOutlined/></div>
+                  <div style="display: flex; flex-direction: row">
+                    <div class="itemList-title">{{ item.name }}</div>
+                  </div>
+                  <div style="margin-left: auto" v-if="item.uuid === hoverGroup" >
+                    <a-tooltip>
+                      <a-popover v-model:open="visible" trigger="click" placement="right">
+                        <template #content>
+                          <a-input v-model:value="editGroupName" size="small" @keydown.enter="saveGroup(item)" @blur="saveGroup(item)"></a-input>
+                        </template>
+                        <a-button @click.stop=" groupNameCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" />
+                      </a-popover>
+                      <!-- <a-button @click.stop="editGroupCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" /> -->
+                      <a-popover v-model:open="visibleDel" trigger="click" placement="right">
+                        <template #content>
+                          <a-button @click="deleteGroup(item)" size="small">确定?</a-button>
+                        </template>
+                        <a-button @click.stop="visibleDel = !visibleDel" style="font-size: 12px; margin: 0; padding: 4px" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
+                      </a-popover>
+                    </a-tooltip>
+                  </div>
+                </a-list-item>
+              </div>
+            </template>
+          </a-list>
+        </div>
+        <div class="add-button">
+          <a-button @click="addGroup">
+            <AppstoreAddOutlined/>
+          </a-button>
+        </div>
+      </div>
+
     </div>
     <!-- 搜索和list -->
     <div class="item-content">
@@ -63,7 +78,7 @@
             <a-list-item   :class="{'list-item':true,'selectedNote':editNote.uuid === item.uuid}">
               <div style="display: flex; flex-direction: row">
                 <div class="itemList-title">{{ item.title }}</div>
-                <div class="itemList-content" >{{ item.content }}</div>
+                <!-- <div class="itemList-content" >{{ item.content }}</div> -->
               </div>
               <div class="list-item-time">
                 <span v-show="item.uuid !== hoverItem">{{ item.createtime.slice(-8) }}</span>
@@ -81,13 +96,13 @@
     <div class="edit-div">
       <div v-if="editNote.title || editNote.content">
         <div class="edit-title">
-          <a-input @blur="saveNote" style="font: italic small-caps bold 16px/1.5 " v-model:value="editNote.title" :bordered="false" placeholder="标题" />
+          <a-input ref="editTitle" @blur="saveNote" style="font: italic small-caps bold 16px/1.5 " v-model:value="editNote.title" :bordered="false" placeholder="标题" />
         </div>
         <a-divider  style="margin: 0"></a-divider>
         <a-textarea  @blur="saveNote" class="edit-content" v-model:value="editNote.content" placeholder="编辑内容" spellcheck="false" :rows="24" />
       </div>
       <div v-else class="deit-default">
-        <span><EditOutlined /></span>
+        <span><EditOutlined @click="openNewEdit" /></span>
         <span>编辑区</span> 
       </div>
     </div>
@@ -99,7 +114,10 @@
 import { ref, reactive, watch,computed, onMounted, onBeforeUnmount, h } from "vue";
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
-import { MinusCircleOutlined, FormOutlined, AppstoreOutlined, AppstoreAddOutlined, BlockOutlined, PlusCircleOutlined,EditOutlined, CloseCircleOutlined } from '@ant-design/icons-vue'
+import { MinusCircleOutlined, FormOutlined,SettingOutlined,
+  AppstoreOutlined, AppstoreAddOutlined, BlockOutlined,
+  PlusCircleOutlined,EditOutlined, CloseCircleOutlined,RollbackOutlined } from '@ant-design/icons-vue'
+import  Setting  from "./Setting.vue";
 
 
 
@@ -130,6 +148,8 @@ let groupList = reactive([])
 let visible = ref(false)
 let visibleDel = ref(false)
 let editGroupName = ref('')
+let editTitle = ref(null)
+let showSettingPage = ref(false)
 
 const getItem = (label, key, icon, children, type) => {
   return {
@@ -252,15 +272,16 @@ const refreshList = async () => {
 
 // 打开新的编辑
 const openNewEdit = () => {
-  editNote.content = '-'
-  editNote.title = '编辑标题'
+  editNote.content = ''
+  editNote.title = '标题'
   editNote.groupUUID = ''
   editNote.createtime = ''
   editNote.uuid = ''
+  setTimeout(() => {
+    editTitle.value?.focus()
+  }, 100);
 }
 // 添加笔记
-const addNote = () => {
-}
 const openEdit = (note) => {
   editNote.content = note.content
   editNote.title = note.title
@@ -286,6 +307,7 @@ const deleteNote = async (note) => {
   refreshList()
   if (note.uuid === editNote.uuid) {
     openNewEdit()
+    editNote.title = ''
   }
 }
 
@@ -341,27 +363,8 @@ onBeforeUnmount(() => {
 
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(() => {
-  // esc 返回home页面
   window.addEventListener('keydown', handleKeydown);
-  window.electron.resizeWindow({width: 1000, height: 650})
-  // if (mainContent.value) {
-  //   const resizeObserver = new ResizeObserver(entries => {
-  //     entries.forEach(entry => {
-  //       // const size = {width: 500.1231232132, height: 300}
-  //       const size = {width: Math.ceil(entry.contentRect.width) + 20, height: Math.ceil(entry.contentRect.height) + 30}
-  //       console.log('新的宽度:', size.width, '新的高度:', size.height)
-  //       window.electron.resizeWindow(size)
-  //     })
-  //   })
-
-  //   // 开始观察 DOM 元素
-  //   resizeObserver.observe(mainContent.value)
-
-  //   // 清理函数，组件卸载时停止观察
-  //   onUnmounted(() => {
-  //     resizeObserver.disconnect()
-  //   })
-  // }
+  window.electron.resizeWindow({width: 1000, height: 620})
 })
 
 // 在组件卸载前移除事件监听器
@@ -507,7 +510,7 @@ onBeforeUnmount(() => {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    max-width: 5em;
+    max-width: 11em;
     font-size: 1em;
   }
   .itemList-content {
@@ -556,6 +559,18 @@ onBeforeUnmount(() => {
 }
 input, textarea {
   spellcheck: false;
+}
+
+.operate-area {
+  display: flex;
+  justify-content: space-around;
+  margin: 5px 3px;
+  :hover {
+    color: #437fff;
+  }
+  .active {
+    color: #437fff;
+  }
 }
 
 </style>

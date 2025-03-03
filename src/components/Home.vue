@@ -2,15 +2,15 @@
   <div class="main-content" ref="mainContent">
     <a-space class="input-search">
       <a-button @click="gotoManage" size="small"><SettingOutlined /></a-button>
-      <a-input size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copyFirst">
+      <a-input size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copySel" >
       </a-input>
     </a-space>
     <div><span class="desc-text">知识库软件 | dylink</span></div>
-    <a-list v-show="dataList.list.length" class="main-list" size="small" bordered :data-source="dataList.list" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
-      <template #renderItem="{ item }">
-        <div class="list-item" @click="copyContent(item)">
+    <a-list  v-show="dataList.list.length" class="main-list" size="small" bordered :data-source="dataList.list" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
+      <template #renderItem="{ item, index }">
+        <div ref="mainListDom" :class="{'list-item':true,'item-selected':selIndex===index}" @click="copyContent(item)" @mouseenter="changeSel(index)">
           <a-list-item>
-            <div style="font:  bold 0.8em/1.5 'Arial', sans-serif;">{{ item.title }}</div>
+            <div :tabindex="index" @focus="selIndex=index" style="font:  bold 1em/1.5 'Arial', sans-serif;">{{ item.title }}</div>
             <div class="note-content">{{ item.content }}</div>
           </a-list-item>
         </div>
@@ -23,7 +23,6 @@
   <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
-import FileUpload from "./FileUpload.vue";
 // import { settingFilled, StarFilled, StarTwoTone } from 'ant-design/icons-vue';
 import { SettingOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
@@ -35,19 +34,37 @@ let searchInput = ref("");
 let dataList = reactive({list: []})
 const mainContent = ref(null)
 const router = useRouter();
+const selIndex = ref(0)
+const mainListDom = ref(null)
 // methods
+const changeSel = (index) => {
+  selIndex.value = index
+  console.log('selIndex: ', selIndex.value);
+}
+const handleKeyDown = (event) => {
+  console.log('mainListDom.value: ', mainListDom.value);
+  
+  if (event.key === 'ArrowUp') {
+    if (selIndex.value > 0) selIndex.value--
+    mainListDom.value.scrollTo({top:mainListDom.value.scrollHeight-30, behavior: 'smooth'})
+  } else if (event.key === 'ArrowDown') {
+    if (selIndex.value < dataList.list.length - 1) selIndex.value++
+    mainListDom.value.scrollTo({top:mainListDom.value.scrollHeight+30, behavior: 'smooth'})
+  }
+  // mainListDom.value?.focus()
+};
 // 搜索框
 const onSearch =  debounce(async () => {
   if (!searchInput.value) return
   const resList = await window.electron.mainSearch(searchInput.value.split(' '))
   dataList.list = resList
-  
+  selIndex.value = 0
 }, 300);
 
 const gotoManage = () => {
   router.push('/manage').catch(error => {
     console.log('error: ', error);
-    
+
   });
 }
 
@@ -57,18 +74,19 @@ const copyContent = async (note) => {
   await navigator.clipboard.writeText(note.content)
 }
 
-const copyFirst = async () => {
+const copySel = async () => {
   if (!dataList.list.length) return
-  const text = dataList.list[0].content
+  const text = dataList.list[selIndex.value].content
   await navigator.clipboard.writeText(text)
 }
 
 
 onMounted(() => {
-
+  window.addEventListener('keydown', handleKeyDown);
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown);
 });
 
 // 使用 ResizeObserver 来监听元素的尺寸变化
@@ -124,6 +142,12 @@ h1 {
   }
   .main-list {
     -webkit-app-region: no-drag;
+    overflow: auto;
+    max-height: 500px;
+    &::-webkit-scrollbar {
+      width: 0px;  /* 隐藏垂直滚动条 */
+      height: 0px;  /* 隐藏水平滚动条 */
+    }
   }
 }
 .desc-text {
@@ -133,10 +157,10 @@ h1 {
 .list-item {
   width: auto;
   height: auto;
-  &:hover {
-    background-color: #D2DAFF;
-    border-radius: 10px;
-  }
+}
+.item-selected {
+  background-color: #D2DAFF;
+  border-radius: 10px;
 }
 
 .note-content {

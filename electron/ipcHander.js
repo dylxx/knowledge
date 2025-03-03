@@ -1,6 +1,5 @@
 // ipcHandler.js
 const { ipcMain, BrowserWindow, ipcRenderer } = require('electron')
-const {getConfig} = require('./init')
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid')
@@ -133,6 +132,14 @@ const mainSearch = async (event, keywords) => {
   return await execSql(sql, params)
 }
 
+const getConfig = () => {
+  // 读取 JSON 文件
+  const jsonFilePath = './electron/config.json'; // 假设 JSON 文件路径
+  const jsonData = fs.readFileSync(jsonFilePath, 'utf8');  // 读取 JSON 文件内容
+  // 解析 JSON 数据
+  return data = JSON.parse(jsonData);
+}
+
 function setupIpcHandlers() {
   ipcMain.handle('getWindowSize', getWindowSize)
   ipcMain.handle('resize-window', resizeWindow)
@@ -151,6 +158,7 @@ function setupIpcHandlers() {
   ipcMain.handle('removeGroup',  removeGroup)
   ipcMain.handle('search',  search)
   ipcMain.handle('mainSearch',  mainSearch)
+  ipcMain.handle('getConfig',  getConfig)
   
 }
 
