@@ -14,7 +14,7 @@ const sqls = {
   deleteNoteByUUID: {method: 'run', sql: 'delete from notes where uuid = $uuid'},
   getNoteByGroupId: {method: 'all', sql: 'select * from notes where groupuuid = $groupuuid order by createtime desc'},
   removeGroup: {method: 'run', sql:  `update notes set groupuuid = '' where groupuuid = $groupuuid`},
-  removeNoteGroup: {method: 'run', sql:  `update set notes groupuuid = '' where uuid = $uuid`},
+  removeNoteGroup: {method: 'run', sql:  `update notes set groupuuid = '' where uuid = $uuid`},
   saveGroup: {method: 'run', sql: `update groups set name=$name,createtime=$createtime where uuid = $uuid`},
   groupTo: {method: 'run', sql: `update notes set groupuuid = $groupuuid where uuid = $noteuuid`},
   insertNote: {method: 'run', sql: 'insert into notes(uuid, title, content, createtime) values($uuid, $title, $content, $createtime)'},

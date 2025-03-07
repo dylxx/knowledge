@@ -2,10 +2,11 @@
   <div class="main-content" ref="mainContent">
     <a-space class="input-search">
       <a-button @click="gotoManage" size="small"><SettingOutlined /></a-button>
-      <a-input size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copySel" >
+      <a-input ref="mainInput" size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copySel" >
       </a-input>
+      <a-button @click="changeTool" size="small"><RightOutlined /></a-button>
     </a-space>
-    <div><span class="desc-text">知识库软件 | dylink</span></div>
+    <div><span class="desc-text">输入查询 点击复制 | dylink</span></div>
     <a-list  v-show="dataList.list.length" class="main-list" size="small" bordered :data-source="dataList.list" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
       <template #renderItem="{ item, index }">
         <div ref="mainListDom" :class="{'list-item':true,'item-selected':selIndex===index}" @click="copyContent(item)" @mouseenter="changeSel(index)">
@@ -23,11 +24,9 @@
   <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
-// import { settingFilled, StarFilled, StarTwoTone } from 'ant-design/icons-vue';
-import { SettingOutlined } from '@ant-design/icons-vue'
+import { SettingOutlined,RightOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
-import anime from 'animejs';
 
 // 数据
 let searchInput = ref("");
@@ -36,13 +35,12 @@ const mainContent = ref(null)
 const router = useRouter();
 const selIndex = ref(0)
 const mainListDom = ref(null)
+const mainInput = ref(null)
 // methods
 const changeSel = (index) => {
   selIndex.value = index
-  console.log('selIndex: ', selIndex.value);
 }
 const handleKeyDown = (event) => {
-  console.log('mainListDom.value: ', mainListDom.value);
   
   if (event.key === 'ArrowUp') {
     if (selIndex.value > 0) selIndex.value--
@@ -62,15 +60,14 @@ const onSearch =  debounce(async () => {
 }, 300);
 
 const gotoManage = () => {
-  router.push('/manage').catch(error => {
-    console.log('error: ', error);
+  router.push('/manage')
+}
 
-  });
+const changeTool = () => {
+  router.push('/videoTool')
 }
 
 const copyContent = async (note) => {
-  console.log('copycontent');
-  
   await navigator.clipboard.writeText(note.content)
 }
 
@@ -83,6 +80,7 @@ const copySel = async () => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
+  mainInput.value.focus()
 });
 
 onBeforeUnmount(() => {
@@ -108,6 +106,7 @@ onMounted(() => {
       resizeObserver.disconnect()
     })
   }
+
 })
 
 </script>
@@ -120,7 +119,7 @@ h1 {
   margin: 1em auto;
 }
 .main-content {
-  width: 300px;
+  width: 341px;
   margin: 0 auto;
   -webkit-app-region: drag;
   .input-search {

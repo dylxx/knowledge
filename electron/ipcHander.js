@@ -1,10 +1,16 @@
 // ipcHandler.js
-const { ipcMain, BrowserWindow, ipcRenderer } = require('electron')
+const { ipcMain, BrowserWindow, ipcRenderer, app } = require('electron')
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid')
 const {query, runDb, execSql} = require('./database.js')
+const ffmpeg = require('fluent-ffmpeg');
+const {getWindow} = require('./createWindow.js')
+const { deleteFilesInDirectory } = require('./common.js')
 
+
+const rootPath = path.dirname(app.getPath('exe'));
+const tempDir = path.join(rootPath, 'temp')
 function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
   if (win) {
@@ -140,6 +146,84 @@ const getConfig = () => {
   return data = JSON.parse(jsonData);
 }
 
+const getFilePaths = (event, fileEvent) => {
+}
+
+const processFile = async (event, fileData) => {
+  const fileInfo = uploadFile(null, fileData)
+  const newFilePath = path.join(tempDir, `${fileInfo.oriName}.mp4`)
+  convertToMp4(fileInfo.path,newFilePath, fileInfo)
+}
+
+const uploadFile = (event, fileData) => {
+  const dotIndex = fileData.name.lastIndexOf('.')
+  const simpleName = fileData.name.substring(0, dotIndex);
+  const extension = fileData.name.substring(dotIndex);
+  const uuid = fileData.id
+  const filePath = path.join(tempDir, `${uuid}${extension}`)
+  fs.writeFileSync(filePath, Buffer.from(fileData.content))
+  const result = {id:fileData.id, path:filePath, oriName: simpleName, relPath: path.join('temp', fileData.name), type: fileData.type}
+  const win = getWindow()
+  console.log('123123123');
+  
+  win.webContents.send('upload-success', result);
+  return result
+}
+
+// 转换文件为mp4并实时返回进度
+const convertToMp4 = async (inputFilePath, outputFilePath, backParams) => {
+  const win = getWindow()
+  ffmpeg(inputFilePath)
+  .output(outputFilePath)
+  .on('progress', (progress) => {
+    // 获取进度信息
+    const { percent } = progress;
+    // 可以在这里触发渲染进程的 IPC 发送进度数据到 UI
+    win.webContents.send('conversion-progress', {percent,...backParams}); // 例如，发送到渲染进程更新进度条
+  })
+  .on('end', () => {
+    win.webContents.send('conversion-finish', {...backParams,path:outputFilePath}); // 例如，发送到渲染进程更新进度条
+    console.log('转换完成！');
+  })
+  .on('error', (err, stdout, stderr) => {
+    win.webContents.send('conversion-error', {...backParams}); // 例如，发送到渲染进程更新进度条
+    console.error('发生错误:', err);
+    console.error('FFmpeg 错误输出:', stderr);
+  })
+  .run();
+}
+
+const margeToMp4 = (event, fileData) => {
+  console.log('filedata:::', fileData);
+  const simpleName = fileData.name.substring(0,fileData.name.lastIndexOf('.'))
+  const outputPath = path.join(tempDir, `${simpleName}.mp4`); // 输出文件路径
+  const win = getWindow()
+
+  ffmpeg()
+    .input(fileData.vFilePath)
+    .input(fileData.aFilePath)
+    .outputOptions('-c:v copy') // 复制视频流，不重新编码
+    .outputOptions('-c:a aac')  // 使用AAC编码音频流
+    .outputOptions('-strict experimental') // 允许使用实验性的AAC编码器
+    .save(outputPath)
+    .on('end', () => {
+      const resp = {id:fileData.id,aFilePath:fileData.aFilePath,vFilePath:fileData.vFilePath,path:outputPath}
+      win.webContents.send('margeToMp4-finish', resp);
+      console.log('音视频合并完成');
+    })
+    .on('error', (err) => {
+      console.error('合并过程中发生错误:', err);
+    });
+}
+
+const clearTempFile = () => {
+  deleteFilesInDirectory( tempDir)
+}
+
+const execCode = (event, code) => {
+  return eval(code)
+}
+
 function setupIpcHandlers() {
   ipcMain.handle('getWindowSize', getWindowSize)
   ipcMain.handle('resize-window', resizeWindow)
@@ -159,7 +243,12 @@ function setupIpcHandlers() {
   ipcMain.handle('search',  search)
   ipcMain.handle('mainSearch',  mainSearch)
   ipcMain.handle('getConfig',  getConfig)
-  
+  ipcMain.handle('getFilePaths',  getFilePaths)
+  ipcMain.handle('processFile',  processFile)
+  ipcMain.handle('clearTempFile', clearTempFile)
+  ipcMain.handle('margeToMp4', margeToMp4)
+  ipcMain.handle('uploadFile', uploadFile)
+  ipcMain.handle('execCode', execCode)
 }
 
 module.exports = {

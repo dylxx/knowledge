@@ -4,7 +4,13 @@ const { contextBridge, ipcRenderer } = require('electron');
 // 暴露的方法
 contextBridge.exposeInMainWorld('electron', {
   send: (channel, data) => ipcRenderer.send(channel, data),
+  startDrag: (fileName) => ipcRenderer.send('ondragstart', fileName),
   receive: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
+  onConversionProgress: (callback) => ipcRenderer.on('conversion-progress', (_event, value) =>  callback(value)),
+  onConversionFinish: (callback) => ipcRenderer.on('conversion-finish', (_event, value) =>  callback(value)),
+  margeToMp4Finish: (callback) => ipcRenderer.on('margeToMp4-finish', (_event, value) =>  callback(value)),
+  // onConversionError: (channel,callback) => ipcRenderer.on('conversion-error', callback),
+  onUpSuccess: (callback) => ipcRenderer.on('upload-success', (_event, value) =>  callback(value)),
   resizeWindow: (size) => ipcRenderer.invoke('resize-window', size),
   getWindowSize: () => ipcRenderer.invoke('getWindowSize'),
   onSearch: (filter) => ipcRenderer.invoke('onSearch', filter),
@@ -23,6 +29,12 @@ contextBridge.exposeInMainWorld('electron', {
   search: (params) => ipcRenderer.invoke('search',params),
   mainSearch: (keywords) => ipcRenderer.invoke('mainSearch',keywords),
   getConfig:() => ipcRenderer.invoke('getConfig'),
+  getFilePaths:(files) => ipcRenderer.invoke('getFilePaths', files),
+  processFile: (fileData) => ipcRenderer.invoke('processFile', fileData),
+  uploadFile: (fileData) => ipcRenderer.invoke('uploadFile', fileData),
+  clearTempFile: () => ipcRenderer.invoke('clearTempFile'),
+  margeToMp4: (fileData) => ipcRenderer.invoke('margeToMp4', fileData),
+  execCode: (code) => ipcRenderer.invoke('execCode', code),
 });
 
 window.addEventListener('DOMContentLoaded', () => {
