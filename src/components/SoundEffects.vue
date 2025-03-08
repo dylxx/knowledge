@@ -1,9 +1,9 @@
 <template  style="height: 260px">
   <div class="moveBar" ></div>
   <div style="display: flex; justify-content: space-evenly">
-    <LeftOutlined @click="gotoPre" />
-    <RollbackOutlined @click="backHome"/>
-    <RightOutlined @click="gotoNext"/>
+    <LeftOutlined class="hoverActive" @click="gotoPre" />
+    <RollbackOutlined class="hoverActive" @click="backHome"/>
+    <RightOutlined class="hoverActive" @click="gotoNext"/>
   </div>
   <div class="dir-setting">
     <span>文件目录:  </span>
@@ -21,17 +21,27 @@
                 <div class="itemList-title"><span>{{ item.name }}</span></div>
               </div>
             </a-list-item>
+            <span v-if="childIsDir(item)">
+              <DownOutlined v-show="!item.activeChild" style="font-size: 0.5em;" @click.stop="activeChild(item)"/>
+              <UpOutlined v-show="item.activeChild" style="font-size: 0.5em;" @click.stop="activeChild(item)"/>
+            </span>
+          </div>
+          <div v-for="(cdir, cindex) in item.children" :key="cindex">
+            <div :class="{'dir-list-item':true, 'selected':activeDir.id === cdir.id}" @click="selecteddir(cdir)"  v-if="childIsDir(item) && item.activeChild"  >
+              <div style="display: flex; flex-direction: row;justify-content: center">
+                <div class="itemList-title"><span>{{ cdir.name }}</span></div>
+              </div>
+            </div>
           </div>
         </template>
       </a-list>
     </div>
     <div class="file-content">
       <div style="margin: 9px">
-        <a-row v-show="fileTree.length" :gutter="[8, 2]" style="justify-content: space-around;">
-          <a-col class="gutter-row"  v-for="(music,index) in activeDir?.children" :key="index" :span="5">
+        <a-row class="gutter-row" v-show="fileTree.length" :gutter="[8, 2]">
+          <a-col class="gutter-col"  v-for="(music,index) in activeDir?.children" :key="index" :span="5">
             <div class="gutter-box" :title="music.name" @mouseenter="selectMusic(music, index)" @mouseleave="pauseMusic(music, index)"  draggable="true" @dragstart="onDragStartFile($event,music)">
               <div class="audio-canvas" ref="waveformRef" ></div>
-
               <audio ref="audioDom" @timeupdate="audioTimeupdate(music, index)" :volume='0.4'>
                 <source :type="music.fileType">
               </audio>
@@ -62,6 +72,7 @@ interface dirItemI {
   path:string,
   type:string,
   children:musicItemI[],
+  activeChild?:boolean
 }
 interface musicItemI {
   id:string,
@@ -105,6 +116,10 @@ const gotoPre = ():void => {
   router.push('/videoTool')
 }
 
+const activeChild = (dir) => {
+  dir.activeChild = !dir.activeChild
+}
+
 const audioTimeupdate = (music:musicItemI, index:number) => {
   const percent = Math.floor(audioDom.value[index].currentTime / audioDom.value[index].duration * 100)
   music.percent = percent
@@ -130,7 +145,7 @@ const pauseMusic = (music:musicItemI, index:number):void => {
 
 const getMusicDirList = async () => {
   console.log('rootDir.value', rootDir.value);
-  const files = await window.electron.getMusicDirList("E:\\music\\音效")
+  const files = await window.electron.getMusicDirList(rootDir.value)
   
   fileTree.value = files.children
   if (files.children.length > 0) {
@@ -139,6 +154,10 @@ const getMusicDirList = async () => {
 }
 
 const selecteddir = async (dir:dirItemI) => {
+  if (childIsDir(dir)) {
+    dir.activeChild = !dir.activeChild
+    return
+  }
   activeDir.value = dir
   // 清理画布
   console.log(waveformRef.value.length);
@@ -167,10 +186,6 @@ const drawWave = async (path:string, index:number, fileType) => {
       barWidth: 1,
     })
   waveSurfer.load(url)
-  // // 添加时间
-  // const music = activeDir.value.children[index]
-  // console.log(1111111,audioDom.value[index].duration);
-  // music.duration = audioDom.value[index].duration 
 }
 
 const onDragStartFile = (event, file:musicItemI) => {
@@ -181,6 +196,13 @@ const onDragStartFile = (event, file:musicItemI) => {
   }
   window.electron.startDrag(file.path)
   // event.dataTransfer.setData('fileId', file.id)
+}
+
+const childIsDir = (dir) => {
+  if (dir.children && dir.children[0].type === 'directory') {
+    return true
+  }
+  return false
 }
 
 onBeforeUnmount(() => {
@@ -236,6 +258,9 @@ onMounted(() => {
       .dirList-item {
         padding: 2px;
       }
+      .itemList-title {
+        cursor: default;
+      }
     }
   }
   .file-content {
@@ -250,10 +275,13 @@ onMounted(() => {
     }
   }
 }
-.gutter-row {    
-  background-color: #cbdaff;
-  border-radius: 4px;
-  margin: 3px;
+.gutter-row {
+  margin-right: -31px !important;
+  .gutter-col {    
+    background-color: #cbdaff;
+    border-radius: 4px;
+    margin: 3px;
+  }
 }
 .gutter-box {
   height: 30%;
@@ -279,6 +307,11 @@ onMounted(() => {
   background-color: #e6f4ff !important;
   &:hover {
     background-color: #faebd7;
+  }
+}
+.hoverActive {
+  &:hover {
+    color: #3b73ff;
   }
 }
 </style>

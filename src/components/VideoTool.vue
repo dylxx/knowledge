@@ -1,7 +1,7 @@
 <template  style="height: 200px">
   <div class="moveBar" ></div>
   <div style="display: flex; justify-content: space-evenly">
-    <LeftOutlined />
+    <LeftOutlined @click="gotoPre" />
     <RollbackOutlined @click="backHome"/>
     <RightOutlined @click="gotoDiary"/>
   </div>
@@ -17,7 +17,7 @@
         <span style="font-size: 0.8em">合并mp4</span>
         <span style="font-size: 0.8em">音视频同时拖拽</span>
       </div>
-      <ul class="transMp4-file">
+      <ul class="transMp4-file" >
         <li v-for="(file,index) in fileData.list" :key="index">
           <div style="display: flex">
             <LinkOutlined style="margin:auto 3px"></LinkOutlined>
@@ -55,6 +55,9 @@ let tool = reactive({
 })
 // methods
 const backHome = () => {
+  router.push('/')
+}
+const gotoPre = () => {
   router.push('/')
 }
 const gotoDiary = () => {
@@ -203,6 +206,7 @@ onMounted(() => {
   -webkit-app-region: drag;
 }
 .transMp4-main {
+  width: auto;
   display: flex;
   flex-direction: row;
   // justify-content: space-evenly;
@@ -218,7 +222,7 @@ onMounted(() => {
     background-color: #ffffff;
     min-height: 70px;
     height: 114px;
-    width: 30%;
+    width: 108px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -246,7 +250,7 @@ onMounted(() => {
     justify-content: space-evenly;
     background-color: #d5dcfa;
     height: 112px;
-    margin: 1px;
+    margin-left: 2px;
     border-radius: 3px;
     padding: 2px;
     .clear-tool:hover {
