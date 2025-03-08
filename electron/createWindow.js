@@ -1,7 +1,8 @@
 
-const { app, BrowserWindow, Menu, globalShortcut,Tray, ipcMain } = require('electron')
-const path = require('path')
-let tray;
+import { app, BrowserWindow, Menu, globalShortcut,Tray, ipcMain } from 'electron'
+import path from 'path'
+import { __dirname } from './common.js'
+let tray
 let isHidden = false;
 let win
 const createWindow = () => {
@@ -9,14 +10,14 @@ const createWindow = () => {
     width: 361,
     height: 96,
     icon: path.join(__dirname, '../public/no.ico'),
-    alwaysOnTop: true,  // 确保窗口始终在最前面
+    // alwaysOnTop: true,  // 确保窗口始终在最前面
     frame: false,
     backgroundColor: '#0000000',
     skipTaskbar: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       devTools: true
     }
   })
@@ -75,7 +76,7 @@ const createWindow = () => {
       isHidden = true;
     }
   });
-  // win.webContents.openDevTools()
+  win.webContents.openDevTools()
   win.on('closed', () => {
     win = null
   })
@@ -90,4 +91,8 @@ const createWindow = () => {
     }
   });
 }
-module.exports = { getWindow: () => win, createWindow };
+function getWindow() {
+  return win
+}
+
+export {createWindow, getWindow}

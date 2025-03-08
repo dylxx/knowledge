@@ -1,7 +1,7 @@
-const { app } = require('electron');
-const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
-
+import { app } from 'electron'
+import path from 'path'
+import sqlite3 from 'sqlite3';
+sqlite3.verbose()
 // 获取数据库的路径
 const dbPath = path.join(app.getPath('userData'), 'data.sqlite');
 const sqls = {
@@ -169,9 +169,4 @@ function closeDB() {
 // 初始化数据库（仅调用一次）
 initDB();
 
-module.exports = {
-  query,
-  runDb,
-  execSql,
-  closeDB
-};
+export {query, runDb, execSql, closeDB}

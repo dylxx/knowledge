@@ -1,9 +1,12 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-function deleteFilesInDirectory(directory) {
+ function deleteFilesInDirectory(directory) {
   fs.readdir(directory, (err, files) => {
     if (err) {
+      
       console.error('读取目录失败:', err);
       return;
     }
@@ -32,5 +35,8 @@ function deleteFilesInDirectory(directory) {
   });
 }
 
+const __dirname =dirname(fileURLToPath(import.meta.url))
+console.log('__dirname::', __dirname);
+
 // 调用示例
-module.exports = { deleteFilesInDirectory };
+export {deleteFilesInDirectory, __dirname}

@@ -1,6 +1,5 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
-
 // 暴露的方法
 contextBridge.exposeInMainWorld('electron', {
   send: (channel, data) => ipcRenderer.send(channel, data),
@@ -35,6 +34,11 @@ contextBridge.exposeInMainWorld('electron', {
   clearTempFile: () => ipcRenderer.invoke('clearTempFile'),
   margeToMp4: (fileData) => ipcRenderer.invoke('margeToMp4', fileData),
   execCode: (code) => ipcRenderer.invoke('execCode', code),
+  getMusicDirList: (dirPath) => {
+    return ipcRenderer.invoke('getMusicDirList', dirPath)
+  },
+  readMusic: (path) => ipcRenderer.invoke('readMusic', path),
+  copyFileToTemp: (params) => ipcRenderer.invoke('copyFileToTemp', params),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

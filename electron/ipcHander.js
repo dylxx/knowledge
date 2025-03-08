@@ -1,16 +1,19 @@
 // ipcHandler.js
-const { ipcMain, BrowserWindow, ipcRenderer, app } = require('electron')
-const fs = require('fs');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid')
-const {query, runDb, execSql} = require('./database.js')
-const ffmpeg = require('fluent-ffmpeg');
-const {getWindow} = require('./createWindow.js')
-const { deleteFilesInDirectory } = require('./common.js')
+import { ipcMain, BrowserWindow, app } from 'electron'
+// 这样改回 require 方式
 
+import fs from 'fs'
+import path from 'path'
+import { v4 as uuidv4 } from 'uuid'
+import {query, runDb, execSql} from './database.js'
+import ffmpeg from 'fluent-ffmpeg'
+import {getWindow} from './createWindow.js'
+import { deleteFilesInDirectory, __dirname } from './common.js'
+import mime from 'mime-types'
+import {parseFile} from 'music-metadata'
 
 const rootPath = path.dirname(app.getPath('exe'));
-const tempDir = path.join(rootPath, 'temp')
+const tempDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'temp'): path.join(rootPath, 'temp')
 function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
   if (win) {
@@ -224,6 +227,93 @@ const execCode = (event, code) => {
   return eval(code)
 }
 
+const getMusicDirListTraverse = async (event, dirPath, musicDirList, indexs) => {
+  // 初始化树结构
+  const tree = {
+    id: uuidv4(),
+    name: path.basename(dirPath),
+    path: dirPath,
+    type: 'directory',
+    children: []
+  };
+  const files = fs.readdirSync(dirPath);
+  for (let index = 0; index < files.length; index++) {
+    const file = files[index]
+    const filePath = path.join(dirPath, file);
+    const stats = fs.statSync(filePath);
+    
+    if (stats.isDirectory()) {
+      // 如果是目录，递归获取子目录的音频文件树
+      tree.children.push( await getMusicDirListTraverse(event, filePath, musicDirList, [...indexs, index]));
+    } else if (stats.isFile() && isAudioFile(file)) {
+      const id = uuidv4()
+      // 如果是音频文件，添加到当前目录的子节点中
+      musicDirList.push({id,filePath, indexs: [...indexs, index]})
+      // const metadata = await parseFile(filePath)
+      tree.children.push({
+        id: id,
+        name: file,
+        path: filePath,
+        type: 'file',
+        fileType: mime.lookup(filePath),
+        duration: 3
+      });
+    }
+  };
+  return JSON.parse(JSON.stringify(tree));
+}
+
+const getMusicDirList = async (event, path) => {
+  // 赋值用地址
+  const musicDirList = []
+  const tree = await getMusicDirListTraverse(event, path, musicDirList, [])
+  // console.log(musicDirList);
+  const promises = musicDirList.map((item, index) => getDuration(item, index));
+  const results = await Promise.all(promises)
+  modifyTree(tree, results)
+  return tree
+}
+
+const modifyTree = (node, params) => {
+  const item = params.find(item => item.id === node.id)
+  if(item) {
+    node.duration = item.duration
+  }
+  // 递归处理子节点
+  if (node.children && node.children.length > 0) {
+    node.children.forEach(child => modifyTree(child,params));
+  }
+};
+
+async function getDuration(item, index) {
+  return new Promise(async (resolve) => {
+    const metadata = await parseFile(item.filePath)
+    resolve({id: item.id, duration:Number(metadata.format.duration.toFixed(1))})
+  });
+}
+
+function isAudioFile(filename) {
+  // 定义音频文件的扩展名
+  const audioExtensions = ['.mp3', '.wav', '.flac', '.aac', '.ogg'];
+  const ext = path.extname(filename).toLowerCase();
+  return audioExtensions.includes(ext);
+}
+
+const readMusic = async (evnet, path) => {
+  const result = fs.promises.readFile(path)
+  return result
+}
+
+const copyFileToTemp = async (event, params) => {
+  const extension = params.path.substring(params.path.lastIndexOf('.')) 
+  newPath = path.join(tempDir, params.id+extension)
+  // 不存在才复制文件
+  if (!fs.existsSync(newPath)) {
+    fs.copyFileSync(params.path, newPath)
+  }
+  return newPath
+}
+
 function setupIpcHandlers() {
   ipcMain.handle('getWindowSize', getWindowSize)
   ipcMain.handle('resize-window', resizeWindow)
@@ -249,8 +339,9 @@ function setupIpcHandlers() {
   ipcMain.handle('margeToMp4', margeToMp4)
   ipcMain.handle('uploadFile', uploadFile)
   ipcMain.handle('execCode', execCode)
+  ipcMain.handle('getMusicDirList', getMusicDirList)
+  ipcMain.handle('readMusic', readMusic)
+  ipcMain.handle('copyFileToTemp',copyFileToTemp)
 }
 
-module.exports = {
-  setupIpcHandlers,
-}
+export {setupIpcHandlers}

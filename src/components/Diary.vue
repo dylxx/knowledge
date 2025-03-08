@@ -1,4 +1,10 @@
 <template  style="height: 200px">
+  <div class="moveBar" ></div>
+  <div style="display: flex; justify-content: space-evenly">
+    <LeftOutlined @click="gotoMusic"/>
+    <RollbackOutlined @click="backHome"/>
+    <RightOutlined @click="gotoDiary"/>
+  </div>
   <a-input v-model:value="searchInput" size="small"></a-input>
   <a-button @click="execCode">执行</a-button>
   <div>{{ result }}</div>
@@ -13,11 +19,16 @@ import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
 
 // 数据
+const router = useRouter();
 let searchInput = ref('')
 let result = ref('123123')
 
 const execCode = async () => {
   result.value = await window.electron.execCode(searchInput.value)
+}
+
+const gotoMusic = () => {
+  router.push('/soundEffects')
 }
 
 onBeforeUnmount(() => {

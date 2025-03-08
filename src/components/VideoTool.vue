@@ -58,7 +58,7 @@ const backHome = () => {
   router.push('/')
 }
 const gotoDiary = () => {
-  router.push('/diary')
+  router.push('/soundEffects')
 }
 const gotoPage = (page) =>{
   if(page === 'next' && tool.curr < tool.max) {

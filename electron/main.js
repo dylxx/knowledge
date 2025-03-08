@@ -1,10 +1,10 @@
 
-const { app, BrowserWindow, Menu, globalShortcut,Tray, ipcMain } = require('electron')
-const {setupIpcHandlers} = require('./ipcHander')
-const { deleteFilesInDirectory } = require('./common.js')
-const path = require('path')
-const {getWindow, createWindow} = require('./createWindow.js')
-const init = require('./init.js')
+import  { app, BrowserWindow, Menu, globalShortcut,Tray, ipcMain } from 'electron'
+import {setupIpcHandlers} from './ipcHander.js'
+import { deleteFilesInDirectory, __dirname } from './common.js'
+import path from 'path'
+import {getWindow, createWindow} from './createWindow.js'
+import {init} from './init.js'
 
 let win
 app.whenReady().then(() => {
@@ -41,7 +41,12 @@ ipcMain.on('ondragstart', (event, filePath) => {
   })
 })
 
+console.log(111111, __dirname);
+
+console.log(22222, path.join(__dirname, 'temp'));
+
 deleteFilesInDirectory( path.join(__dirname, 'temp'))
+init()
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
