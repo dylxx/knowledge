@@ -10,7 +10,7 @@ const createWindow = () => {
     width: 361,
     height: 96,
     icon: path.join(__dirname, '../public/no.ico'),
-    // alwaysOnTop: true,  // 确保窗口始终在最前面
+    alwaysOnTop: true,  // 确保窗口始终在最前面
     frame: false,
     backgroundColor: '#0000000',
     skipTaskbar: false,
@@ -32,7 +32,7 @@ const createWindow = () => {
     // win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
   
-  tray = new Tray(path.join(__dirname, '../public/no.ico'),);
+  tray = new Tray(path.join(__dirname, '../public/no.ico'));
   tray.setToolTip('note');
 
   // 设置托盘右键菜单

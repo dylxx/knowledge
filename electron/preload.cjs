@@ -3,13 +3,22 @@ const { contextBridge, ipcRenderer } = require('electron');
 // 暴露的方法
 contextBridge.exposeInMainWorld('electron', {
   send: (channel, data) => ipcRenderer.send(channel, data),
+  off: (channel, listener) => {
+    ipcRenderer.removeListener(channel, listener);
+  },
+  removeAllListeners: (channel) => {
+    ipcRenderer.removeAllListeners(channel);
+  },
+  listenerCount: (channel) => {
+    ipcRenderer.listenerCount(channel);
+  },
   startDrag: (fileName) => ipcRenderer.send('ondragstart', fileName),
   receive: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
-  onConversionProgress: (callback) => ipcRenderer.on('conversion-progress', (_event, value) =>  callback(value)),
-  onConversionFinish: (callback) => ipcRenderer.on('conversion-finish', (_event, value) =>  callback(value)),
-  margeToMp4Finish: (callback) => ipcRenderer.on('margeToMp4-finish', (_event, value) =>  callback(value)),
+  onConversionProgress: (callback) => ipcRenderer.on('onConversionProgress', (_event, value) =>  callback(value)),
+  onConversionFinish: (callback) => ipcRenderer.on('onConversionFinish', (_event, value) =>  callback(value)),
+  margeToMp4Finish: (callback) => ipcRenderer.on('margeToMp4Finish', (_event, value) =>  callback(value)),
   // onConversionError: (channel,callback) => ipcRenderer.on('conversion-error', callback),
-  onUpSuccess: (callback) => ipcRenderer.on('upload-success', (_event, value) =>  callback(value)),
+  onUpSuccess: (callback) => ipcRenderer.on('onUpSuccess', (_event, value) =>  callback(value)),
   resizeWindow: (size) => ipcRenderer.invoke('resize-window', size),
   getWindowSize: () => ipcRenderer.invoke('getWindowSize'),
   onSearch: (filter) => ipcRenderer.invoke('onSearch', filter),
@@ -39,6 +48,7 @@ contextBridge.exposeInMainWorld('electron', {
   },
   readMusic: (path) => ipcRenderer.invoke('readMusic', path),
   copyFileToTemp: (params) => ipcRenderer.invoke('copyFileToTemp', params),
+  runSql: (params) => ipcRenderer.invoke('runSql', params),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

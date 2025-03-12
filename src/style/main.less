@@ -1,0 +1,29 @@
+.moveBar {
+  margin-bottom: 2px;
+  height: 10px;
+  background-color: aliceblue;
+  -webkit-app-region: drag;
+  border-radius: 5px
+}
+.hoverActive {
+  &:hover {
+    color: #3b73ff;
+  }
+}
+.itemHover {
+  &:hover {
+    background-color: #faebd7 !important;
+  }
+}
+.itemSelected {
+  background-color: #e6f4ff !important;
+}
+
+.scoll {
+  height: 100%;
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: 0px;  /* 隐藏垂直滚动条 */
+    height: 0px;  /* 隐藏水平滚动条 */
+  }
+}

@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
+import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount,watchEffect } from "vue";
 // import { settingFilled, StarFilled, StarTwoTone } from 'ant-design/icons-vue';
 import { LinkOutlined,UpOutlined,DownOutlined,DeleteOutlined,DownloadOutlined,UploadOutlined,RollbackOutlined,LeftOutlined,RightOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
@@ -109,6 +109,7 @@ const dropFileTrans = async (event) => {
       });
     };
     reader.readAsArrayBuffer(file);
+    console.log(5555555555, fileData.list.length);
   }
 }
 
@@ -121,6 +122,7 @@ const dropFileMerge = (event) => {
     return
   }
   const uuid = crypto.randomUUID();
+  
   const vFile = files.find(item => item.type.includes('video'))
   fileData.list.push({id: uuid, name: vFile.name})
   for (let index = 0; index < files.length; index++) {
@@ -129,6 +131,7 @@ const dropFileMerge = (event) => {
     // fileData.list.push({id:uuid, name: file.name, size: file.size})
     reader.onload = (e) => {
       const fileContent = e.target.result;
+      
       // 将文件内容传递到主进程进行处理
       window.electron.uploadFile({
         id: uuid,
@@ -153,17 +156,16 @@ function checkMergeFile(files) {
 // 清理列表和缓存
 const clearAll = () => {
   fileData.list = []
+  console.log(fileData);
   window.electron.clearTempFile()
 }
 
 onMounted(() => {
-  
   window.electron.resizeWindow({width: 400, height: 175})
   window.electron.onUpSuccess((data) => {
-    
+    // 只有音视频组合才执行
     if (tool.curr !== 1) return
     const file = fileData.list.find(item => item.id === data.id)
-    console.log('data::::', file);
     if(data.type.includes('video')) file.vFilePath = data.path
     if(data.type.includes('audio')) file.aFilePath = data.path
     if(file.aFilePath && file.vFilePath) {
@@ -171,30 +173,36 @@ onMounted(() => {
     }
   })
   window.electron.onConversionProgress((data) => {
+    console.log(1111111111, fileData.list.length);
     const file = fileData.list.find(item => item.id === data.id)
+    if (!file) return
     file.percent = Math.round(data.percent)
   });
   window.electron.onConversionFinish((data) => {
     const file = fileData.list.find(item => item.id === data.id)
+    if (!file) return
     file.path = data.path
     file.percent = 100
   });
   window.electron.margeToMp4Finish((data) => {
     console.log('data:::', data);
-    
     const file = fileData.list.find(item => item.id === data.id)
     file.path = data.path
     file.percent = 100
   })
+  
 });
 
 onBeforeUnmount(() => {
+  window.electron.removeAllListeners('onConversionProgress');
+  window.electron.removeAllListeners('onConversionFinish');
+  window.electron.removeAllListeners('margeToMp4Finish');
+  window.electron.removeAllListeners('onUpSuccess');
 });
 
-// 使用 ResizeObserver 来监听元素的尺寸变化
-onMounted(() => {
-
-})
+watchEffect(() => {
+  console.log('fileData.list changed:', fileData.list.length);
+});
 
 </script>
 

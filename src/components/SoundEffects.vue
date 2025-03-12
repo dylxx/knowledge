@@ -64,6 +64,7 @@ import { LinkOutlined,AppstoreOutlined,UpOutlined,DownOutlined,DeleteOutlined,Do
 import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
 import WaveSurfer from 'wavesurfer.js';
+import  "../style/main.less";
 
 // 接口定义
 interface dirItemI {
@@ -110,7 +111,7 @@ const backHome = ():void => {
   router.push('/')
 }
 const gotoNext = ():void => {
-  router.push('/diary')
+  router.push('/tomatoClock')
 }
 const gotoPre = ():void => {
   router.push('/videoTool')
@@ -307,11 +308,6 @@ onMounted(() => {
   background-color: #e6f4ff !important;
   &:hover {
     background-color: #faebd7;
-  }
-}
-.hoverActive {
-  &:hover {
-    color: #3b73ff;
   }
 }
 </style>

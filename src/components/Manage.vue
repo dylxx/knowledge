@@ -1,5 +1,5 @@
 <template>
-  <div class="move-div"></div>
+  <div class="moveBar"></div>
   <div class="main-content" ref="mainContent">
     <!-- 左侧导航栏 -->
     <div class="group-content">
@@ -112,12 +112,12 @@
   
   <script setup>
 import { ref, reactive, watch,computed, onMounted, onBeforeUnmount, h } from "vue";
-import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 import { MinusCircleOutlined, FormOutlined,SettingOutlined,
   AppstoreOutlined, AppstoreAddOutlined, BlockOutlined,
   PlusCircleOutlined,EditOutlined, CloseCircleOutlined,RollbackOutlined } from '@ant-design/icons-vue'
 import  Setting  from "./Setting.vue";
+import "../style/main.less";
 
 
 
@@ -377,11 +377,6 @@ onBeforeUnmount(() => {
 </script>
   
 <style scoped  lang="less">
-.move-div {
-  height: 10px;
-  background-color: aliceblue;
-  -webkit-app-region: drag;
-}
 .main-content {
   display: flex;
   flex-direction: row;

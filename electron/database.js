@@ -42,7 +42,22 @@ const sqls = {
     FROM notes
     WHERE title like $keyword or content like $keyword
     order by createtime desc;`
-  }
+  },
+  getTomatoList: {
+    method: 'all',
+    sql:`SELECT *
+    FROM tomato
+    order by createtime desc;`
+  },
+  delTomato: {
+    method: 'run',
+    sql:'delete from tomato where uuid = $uuid'
+  },
+  addTomato: {
+    method: 'run',
+    sql:`insert into tomato(uuid,name,createtime,minute) values($uuid,$name,$createtime,$minute)`
+  },
+
 }
 
 // 创建数据库连接
@@ -85,6 +100,21 @@ function initDB() {
         console.error('创建表失败:', err.message);
       } else {
         console.log('group表已创建或已存在');
+      }
+    });
+    db.run(`
+      CREATE TABLE IF NOT EXISTS tomato (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL,
+        name TEXT,
+        createtime TEXT,
+        minute INTEGER
+      )
+    `, (err) => {
+      if (err) {
+        console.error('创建表失败:', err.message);
+      } else {
+        console.log('tomato表已创建或已存在');
       }
     });
   });

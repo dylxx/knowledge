@@ -169,7 +169,7 @@ const uploadFile = (event, fileData) => {
   const win = getWindow()
   console.log('123123123');
   
-  win.webContents.send('upload-success', result);
+  win.webContents.send('onUpSuccess', result);
   return result
 }
 
@@ -182,10 +182,10 @@ const convertToMp4 = async (inputFilePath, outputFilePath, backParams) => {
     // 获取进度信息
     const { percent } = progress;
     // 可以在这里触发渲染进程的 IPC 发送进度数据到 UI
-    win.webContents.send('conversion-progress', {percent,...backParams}); // 例如，发送到渲染进程更新进度条
+    win.webContents.send('onConversionProgress', {percent,...backParams}); // 例如，发送到渲染进程更新进度条
   })
   .on('end', () => {
-    win.webContents.send('conversion-finish', {...backParams,path:outputFilePath}); // 例如，发送到渲染进程更新进度条
+    win.webContents.send('onConversionFinish', {...backParams,path:outputFilePath}); // 例如，发送到渲染进程更新进度条
     console.log('转换完成！');
   })
   .on('error', (err, stdout, stderr) => {
@@ -211,7 +211,7 @@ const margeToMp4 = (event, fileData) => {
     .save(outputPath)
     .on('end', () => {
       const resp = {id:fileData.id,aFilePath:fileData.aFilePath,vFilePath:fileData.vFilePath,path:outputPath}
-      win.webContents.send('margeToMp4-finish', resp);
+      win.webContents.send('margeToMp4Finish', resp);
       console.log('音视频合并完成');
     })
     .on('error', (err) => {
@@ -314,6 +314,10 @@ const copyFileToTemp = async (event, params) => {
   return newPath
 }
 
+const runSql = async (event, params) => {
+  return await runDb(params.name, toParams(params.params) )
+}
+
 function setupIpcHandlers() {
   ipcMain.handle('getWindowSize', getWindowSize)
   ipcMain.handle('resize-window', resizeWindow)
@@ -342,6 +346,7 @@ function setupIpcHandlers() {
   ipcMain.handle('getMusicDirList', getMusicDirList)
   ipcMain.handle('readMusic', readMusic)
   ipcMain.handle('copyFileToTemp',copyFileToTemp)
+  ipcMain.handle('runSql',runSql)
 }
 
 export {setupIpcHandlers}

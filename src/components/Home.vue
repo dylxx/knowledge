@@ -1,12 +1,18 @@
 <template>
   <div class="main-content" ref="mainContent">
+    <div class="moveBar"></div>
     <a-space class="input-search">
       <a-button @click="gotoManage" size="small"><SettingOutlined /></a-button>
       <a-input ref="mainInput" size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copySel" >
       </a-input>
       <a-button @click="changeTool" size="small"><RightOutlined /></a-button>
     </a-space>
-    <div><span class="desc-text">输入查询 点击复制 | dylink</span></div>
+    <div style="display: flex;justify-content: space-evenly">
+      <SettingOutlined  class="hoverActive" @click="goto('manage')"/>
+      <VideoCameraOutlined class="hoverActive" @click="goto('videoTool')" />
+      <SoundOutlined  class="hoverActive" @click="goto('soundEffects')"/>
+      <ScheduleOutlined  class="hoverActive" @click="goto('tomatoClock')"/>
+    </div>
     <a-list  v-show="dataList.list.length" class="main-list" size="small" bordered :data-source="dataList.list" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
       <template #renderItem="{ item, index }">
         <div ref="mainListDom" :class="{'list-item':true,'item-selected':selIndex===index}" @click="copyContent(item)" @mouseenter="changeSel(index)">
@@ -24,7 +30,7 @@
   <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
-import { SettingOutlined,RightOutlined } from '@ant-design/icons-vue'
+import { SettingOutlined,RightOutlined,VideoCameraOutlined,SoundOutlined,ScheduleOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 
@@ -39,6 +45,11 @@ const mainInput = ref(null)
 // methods
 const changeSel = (index) => {
   selIndex.value = index
+}
+const goto = (uri) => {
+  console.log(uri);
+  
+  router.push(uri)
 }
 const handleKeyDown = (event) => {
   
@@ -121,7 +132,6 @@ h1 {
 .main-content {
   width: 341px;
   margin: 0 auto;
-  -webkit-app-region: drag;
   .input-search {
     background-color: #B1B2FF;
     display: flex;
@@ -131,16 +141,13 @@ h1 {
     padding: 0.5em;
     border-radius: 10px;
     button {
-      -webkit-app-region: no-drag;
       margin: 0;
     }
     input {
-      -webkit-app-region: no-drag;
       width: 250px;
     }
   }
   .main-list {
-    -webkit-app-region: no-drag;
     overflow: auto;
     max-height: 500px;
     &::-webkit-scrollbar {

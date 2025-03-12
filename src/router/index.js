@@ -5,13 +5,15 @@ import Manage from '../components/Manage.vue';
 import VideoTool from '../components/VideoTool.vue';
 import Diary from '../components/Diary.vue';
 import SoundEffects from "../components/SoundEffects.vue";
+import TomatoClock from "../components/TomatoClock.vue";
 
 const routes = [
   { path: '/',name:'Home', component: Home },
   { path: '/manage',name:'Manage', component: Manage },
   { path: '/videoTool', name:'videoTool', component: VideoTool},
   { path: '/diary', name:'diary', component: Diary},
-  { path: '/soundEffects', name:'soundEffects', component: SoundEffects}
+  { path: '/soundEffects', name:'soundEffects', component: SoundEffects},
+  { path: '/tomatoClock', name:'tomatoClock', component: TomatoClock}
 ];
 
 const router = createRouter({
