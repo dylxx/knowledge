@@ -1,12 +1,16 @@
 
-import { app, BrowserWindow, Menu, globalShortcut,Tray, ipcMain } from 'electron'
+import { app, BrowserWindow, Menu, globalShortcut,Tray, screen } from 'electron'
 import path from 'path'
-import { __dirname } from './common.js'
+import { __dirname, getConfig } from './common.js'
+import fs from 'fs'
 let tray
 let isHidden = false;
 let win
 const createWindow = () => {
+  const {x,y} = getWindowBounds()
   win = new BrowserWindow({
+    x,
+    y,
     width: 361,
     height: 96,
     icon: path.join(__dirname, '../public/no.ico'),
@@ -90,6 +94,38 @@ const createWindow = () => {
       app.quit();
     }
   });
+  function getWindowBounds() {
+    try {
+      const {config} = getConfig()
+      const bounds = {x:config.now.placeX, y:config.now.placeY,width:config.now.width,height:config.now.height}
+      const display = screen.getPrimaryDisplay();
+      const { width, height } = display.workAreaSize;
+      console.log(33333, display.workAreaSize, bounds);
+      bounds.x = Math.max(0, Math.min(bounds.x, width - bounds.width));
+      bounds.y = Math.max(0, Math.min(bounds.y, height - bounds.height));
+      console.log(33333, bounds);
+      return bounds
+    } catch (err) {
+      console.error(err);
+      return { x: 800, y: 600 }; // 默认窗口大小
+    }
+  }
+  function saveWindowBounds() {
+    if (win) {
+      const bounds = win.getBounds();
+      const {config, configPath} = getConfig();
+      config.now.placeX = bounds.x
+      config.now.placeY = bounds.y
+      config.now.width = bounds.width
+      config.now.height = bounds.height
+      console.log(config);
+      
+      fs.writeFileSync(configPath, JSON.stringify(config));
+    }
+  }
+  // 记录窗口关闭的位置
+  
+  win.on('close', saveWindowBounds)
 }
 function getWindow() {
   return win

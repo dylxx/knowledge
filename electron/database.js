@@ -31,7 +31,6 @@ const sqls = {
     method: 'all',
     sql:`SELECT *
       FROM notes
-
       LIMIT $pagesize OFFSET $offset
       order by createtime desc;`
   },

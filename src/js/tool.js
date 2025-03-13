@@ -24,4 +24,17 @@ function toParams(obj) {
   return obj; // 返回修改后的对象
 }
 
+function getNestedValue(obj, keys) {
+  let result = obj;
+  for (let key of keys) {
+    if (result && typeof result === 'object' && key in result) {
+      result = result[key];
+    } else {
+      return null; // 如果中途断了就返回null
+    }
+  }
+  return result;
+}
+
+
 export {getCurrentTime, toParams};

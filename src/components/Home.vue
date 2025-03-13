@@ -7,7 +7,7 @@
       </a-input>
       <a-button @click="changeTool" size="small"><RightOutlined /></a-button>
     </a-space>
-    <div style="display: flex;justify-content: space-evenly">
+    <div style="display: flex;justify-content: space-evenly;" v-if="!dataList.list.length">
       <SettingOutlined  class="hoverActive" @click="goto('manage')"/>
       <VideoCameraOutlined class="hoverActive" @click="goto('videoTool')" />
       <SoundOutlined  class="hoverActive" @click="goto('soundEffects')"/>
@@ -64,7 +64,10 @@ const handleKeyDown = (event) => {
 };
 // 搜索框
 const onSearch =  debounce(async () => {
-  if (!searchInput.value) return
+  if (!searchInput.value) {
+    dataList.list = []
+    return
+  }
   const resList = await window.electron.mainSearch(searchInput.value.split(' '))
   dataList.list = resList
   selIndex.value = 0
@@ -103,7 +106,7 @@ onMounted(() => {
   if (mainContent.value) {
     const resizeObserver = new ResizeObserver(entries => {
       entries.forEach(async entry => {
-        const size = {width: Math.ceil(entry.contentRect.width) + 20, height: Math.ceil(entry.contentRect.height) + 30}
+        const size = {width: Math.ceil(entry.contentRect.width) + 20, height: Math.ceil(entry.contentRect.height) + 20}
         console.log('新的宽度:', size.width, '新的高度:', size.height)
         window.electron.resizeWindow(size)
       })
@@ -161,6 +164,7 @@ h1 {
   color: #aaaaaa;
 }
 .list-item {
+  transition: all 0.2s ease;
   width: auto;
   height: auto;
 }
@@ -176,5 +180,6 @@ h1 {
     max-width: 8em;
     font-size: 0.9em;
 }
+
 </style>
   

@@ -8,12 +8,13 @@ import { v4 as uuidv4 } from 'uuid'
 import {query, runDb, execSql} from './database.js'
 import ffmpeg from 'fluent-ffmpeg'
 import {getWindow} from './createWindow.js'
-import { deleteFilesInDirectory, __dirname } from './common.js'
+import { deleteFilesInDirectory, __dirname,getConfig, getNestedValue, updateConfig } from './common.js'
 import mime from 'mime-types'
 import {parseFile} from 'music-metadata'
 
 const rootPath = path.dirname(app.getPath('exe'));
 const tempDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'temp'): path.join(rootPath, 'temp')
+const userDataDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'userData'): path.join(rootPath, 'userData')
 function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
   if (win) {
@@ -28,7 +29,7 @@ function getWindowSize() {
 }
 
 const onSearch = async (event, filter) => {
-  const config = getConfig()
+  const {config} = getConfig()
   const total =  await query('getNoteTotal', {})
   const startIndex = (filter.page - 1) * config.pageSize;
   const resultList =  await query('getNotePage', {$pagesize:config.pageSize,$offset: startIndex})
@@ -141,34 +142,35 @@ const mainSearch = async (event, keywords) => {
   return await execSql(sql, params)
 }
 
-const getConfig = () => {
-  // 读取 JSON 文件
-  const jsonFilePath = './electron/config.json'; // 假设 JSON 文件路径
-  const jsonData = fs.readFileSync(jsonFilePath, 'utf8');  // 读取 JSON 文件内容
-  // 解析 JSON 数据
-  return data = JSON.parse(jsonData);
+const getConf = (event, params) => {
+  const {config} =  getConfig()
+  console.log(333,params, config);
+  
+  return config.now[params]
 }
 
 const getFilePaths = (event, fileEvent) => {
 }
 
 const processFile = async (event, fileData) => {
-  const fileInfo = uploadFile(null, fileData)
+  const fileInfo = uploadFile(null, fileData, 'temp')
   const newFilePath = path.join(tempDir, `${fileInfo.oriName}.mp4`)
   convertToMp4(fileInfo.path,newFilePath, fileInfo)
 }
 
-const uploadFile = (event, fileData) => {
+const uploadFile = (event, fileData, dirType) => {
+  const dir = ({'temp': tempDir, 'userData': userDataDir})[dirType]
   const dotIndex = fileData.name.lastIndexOf('.')
   const simpleName = fileData.name.substring(0, dotIndex);
   const extension = fileData.name.substring(dotIndex);
-  const uuid = fileData.id
-  const filePath = path.join(tempDir, `${uuid}${extension}`)
+  const uuid = fileData.id || uuidv4()
+  // 确定固定名字
+  const filePath = fileData.fixName ? path.join(dir, `${fileData.fixName}${extension}`) : path.join(dir, `${uuid}${extension}`)
+  const relPath = `../${dirType}/${uuid}${extension}`
   fs.writeFileSync(filePath, Buffer.from(fileData.content))
-  const result = {id:fileData.id, path:filePath, oriName: simpleName, relPath: path.join('temp', fileData.name), type: fileData.type}
+  const result = {id:fileData.id, path:filePath,relPath, oriName: simpleName, type: fileData.type}
   const win = getWindow()
   console.log('123123123');
-  
   win.webContents.send('onUpSuccess', result);
   return result
 }
@@ -300,8 +302,13 @@ function isAudioFile(filename) {
 }
 
 const readMusic = async (evnet, path) => {
-  const result = fs.promises.readFile(path)
-  return result
+  try {
+    const result = await fs.promises.readFile(path)
+    return result
+  } catch (error) {
+    console.log(222222222);
+    return null
+  }
 }
 
 const copyFileToTemp = async (event, params) => {
@@ -316,6 +323,15 @@ const copyFileToTemp = async (event, params) => {
 
 const runSql = async (event, params) => {
   return await runDb(params.name, toParams(params.params) )
+}
+
+const updateConf = (event, params) => {
+  
+  const {config} = getConfig()
+  console.log(1111, config);
+  // config.now.tomatoMusic = 'E:\\project\\knowledge\\electron\\userData\\3660d75c-120b-4d28-976f-2f4346a14e89.mp3'
+  config.now[params.name] = params.value
+  updateConfig(config)
 }
 
 function setupIpcHandlers() {
@@ -336,7 +352,7 @@ function setupIpcHandlers() {
   ipcMain.handle('removeGroup',  removeGroup)
   ipcMain.handle('search',  search)
   ipcMain.handle('mainSearch',  mainSearch)
-  ipcMain.handle('getConfig',  getConfig)
+  ipcMain.handle('getConf',  getConf)
   ipcMain.handle('getFilePaths',  getFilePaths)
   ipcMain.handle('processFile',  processFile)
   ipcMain.handle('clearTempFile', clearTempFile)
@@ -347,6 +363,7 @@ function setupIpcHandlers() {
   ipcMain.handle('readMusic', readMusic)
   ipcMain.handle('copyFileToTemp',copyFileToTemp)
   ipcMain.handle('runSql',runSql)
+  ipcMain.handle('updateConfig',updateConf)
 }
 
 export {setupIpcHandlers}

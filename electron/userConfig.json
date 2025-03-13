@@ -1,17 +1,22 @@
 {
-
   "now": {
     "placeX": 100,
     "placeY": 100,
+    "width": 0,
+    "height": 0,
     "filePath": "E:\\documents\\knowledge",
     "minHot":"Alt+c",
+    "tomatoMusic":"",
     "pageSize": 10
   },
   "init": {
     "placeX": 100,
     "placeY": 100,
+    "width": 0,
+    "height": 0,
     "filePath": "E:\\documents\\knowledge",
     "minHot":"Alt+c",
+    "tomatoMusic":"",
     "pageSize": 10
   }
 }

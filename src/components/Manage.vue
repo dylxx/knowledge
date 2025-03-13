@@ -179,6 +179,7 @@ const groupNameCli = (item) => {
   editGroupName.value = item.name
 }
 const addGroup = () => {
+  if (!groupList[groupList.length-1].uuid) return
   groupList.push({
     name: '',
     uuid: '',

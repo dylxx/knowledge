@@ -8,18 +8,19 @@
   <div class="main-content">
     <div class="main-left ">
       <a-list class="typeList-main scoll" size="small" bordered :data-source="typeList" :split="false" style="border: none" :locale="{emptyText: ' '}">
+
           <template #renderItem="{ item, index }">
-            <div class="type-list-item" >
-              <a-list-item  class="typeList-item itemHover "  @click="addTimeSlice(item)">
-                <div style="display: flex; flex-direction: row">
-                  <div class="itemList-title">{{ item.name }}</div>
-                </div>
-              </a-list-item>
+              <div class="type-list-item" >
+                <a-list-item  class="typeList-item itemHover "  @click="addTimeSlice(item)">
+                  <div style="display: flex; flex-direction: row">
+                    <div class="itemList-title">{{ item.name }}</div>
+                  </div>
+                </a-list-item>
               <div style="display: flex;flex-direction: column; width: auto">
                 <div style="display: flex;flex-direction: row">
-                  <a-button size="small" style="margin: 2px 1px" @click="timeDown(item)"><LeftOutlined/></a-button>
+                  <a-button size="small" style="margin: 2px 1px" @click="timeDown(item)" @mousedown="startPress(item, 0)" @mouseup="stopPress" @mouseleave="stopPress"><LeftOutlined/></a-button>
                   <a-button size="small" style="width: auto;min-width:31px;margin:2px 0;" >{{ item.minute }}</a-button>
-                  <a-button size="small" style="margin: 2px 1px 1px 2px" @click="timeUp(item)"><RightOutlined/></a-button>
+                  <a-button size="small" style="margin: 2px 1px 1px 2px" @click="timeUp(item)" @mousedown="startPress(item, 1)" @mouseup="stopPress" @mouseleave="stopPress"><RightOutlined/></a-button>
                   <a-button size="small" style="margin: 2px 3px 1px 1px" @click="delTomato(item, index)"><CloseOutlined /></a-button>
                 </div>
               </div>
@@ -32,10 +33,10 @@
             <a-button size="small" @click="toAddTypes"><PlusOutlined /></a-button>
         </div>
     </div>
-    <div class="main-right">
-      <a-list class="main-list scoll" size="small" bordered :data-source="currList" :split="false" :locale="{emptyText: '任务区'}">
+    <div class="main-right" @dragover.prevent @drop="dropFileTrans($event)">
+      <a-list class="main-list scoll" size="small" bordered :data-source="currList" :split="false" :locale="{emptyText: '拖拽音乐文件至此可替换闹钟'}">
           <template #renderItem="{ item, index }">
-            <div class="type-list-item" >
+            <div :class="['type-list-item',{'anime-in':item.isnew},{'anime-out':item.isout}]" >
               <a-list-item  class="typeList-item itemHover">
                 <div style="display: flex; flex-direction: row">
                   <div class="itemList-title">{{ item.name }}</div>
@@ -44,7 +45,7 @@
               <div style="display: flex;flex-direction: column; width: auto">
                 <div style="display: flex;flex-direction: row">
                   <a-button size="small" style="width: auto;margin:2px 0;min-width: 50px" >{{ item.curr }}</a-button>
-                  <a-button size="small" style="margin: 2px 3px 1px 2px"><CloseOutlined @click="closeSlice(index)"/></a-button>
+                  <a-button size="small" style="margin: 2px 3px 1px 2px"><CloseOutlined @click="closeSlice(item,index)"/></a-button>
                 </div>
               </div>
             </div>
@@ -69,16 +70,17 @@ import { CloseOutlined,PlusOutlined,AlertOutlined,PlayCircleOutlined,RollbackOut
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
-import { getCurrentTime, toParams } from "../js/tool";
+import { getCurrentTime, toParams  } from "../js/tool";
 import "../style/main.less";
 
 // 数据
 const router = useRouter();
 let searchInput = ref('')
 let result = ref('123123')
-let timer = ref(0)
+let timer = null
 let addTime = ref(0)
-const audioSrc = new URL('../assets/tomatoClock.mp3', import.meta.url).href;
+let audioDom = ref(null)
+let audioSrc = ref(new URL('../assets/tomatoClock.mp3', import.meta.url).href)
 let typeList = ref([
 ])
 let currList = ref([
@@ -89,11 +91,50 @@ let addTypes = ref({
   minute: 0,
   createtime: ''
 })
-let audioDom = ref(null)
 let pause = ref(false)
 let clockActive = ref(false)
-
+let intervalUpDown = null
+let musicSrc = ''
 //methods
+// 拖放音乐文件
+const dropFileTrans = async (event) => {
+  event.preventDefault();
+  const file = event.dataTransfer.files[0];
+  if (!file.type.includes('audio')) return
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const fileContent = e.target.result;
+    // 将文件内容传递到主进程进行处理
+    const newFile = await window.electron.uploadFile({
+      fixName: 'tomatoClock',
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      content: fileContent
+    }, 'userData');
+    const data = await window.electron.readMusic(newFile.path)
+    const blob = new Blob([data], {type:file.type})
+    audioSrc.value = URL.createObjectURL(blob)
+    window.electron.updateConfig({name: 'tomatoMusic', value: newFile.path})
+  };
+  reader.readAsArrayBuffer(file);
+}
+// 长按增加/较少时间效果
+const startPress = (tomato, type) => {
+  if (intervalUpDown) return; // 防止重复触发
+  intervalUpDown = setInterval(() => {
+    if(type) {
+      tomato.minute++;
+    } else {
+      tomato.minute--;
+    }
+  }, 200); // 每100ms触发一次
+};
+
+const stopPress = () => {
+  clearInterval(intervalUpDown);
+  intervalUpDown = null;
+};
 const getTomatoList = async () => {
   const list = await window.electron.search({name:'getTomatoList'})
   typeList.value = list
@@ -112,13 +153,13 @@ const toAddTypes = async () => {
 }
 const pauseTime = () => {
   pause.value = false
-  clearInterval(timer.value)
+  clearInterval(timer)
 }
 
 const startTime = () => {
   if(currList.value.length === 0) return
   pause.value = true
-  timer.value = setInterval(() => {
+  timer = setInterval(() => {
     const second = --currList.value[0].second
     currList.value[0].curr = formatTime(second)
     if (second === 0) {
@@ -131,13 +172,19 @@ const startTime = () => {
 }
 const stopVoice = () => {
   const audio = audioDom.value
-  audio.pause()
-  audio.currentTime = 0
-  clockActive.value = false
+  if (!audio.paused) {
+    audio.pause()
+    audio.currentTime = 0
+    clockActive.value = false
+  } else {
+    audio.play()
+    clockActive.value = true
+  }
 }
 const clearAll = () => {
   currList.value = []
-  clearInterval(timer.value)
+  clearInterval(timer)
+  timer = null
   pause.value = false
 }
 const timeDown = (typeItem) => {
@@ -150,13 +197,24 @@ const delTomato = (tomato, index) => {
 const timeUp = (typeItem) => {
   typeItem.minute++
 }
-const closeSlice = (index) => {
-  currList.value.splice(index, 1)
+const closeSlice = (item, index) => {
+  item.isout=  true
+  setTimeout(() => {
+    currList.value.splice(index, 1)
+  }, 300);
+  // 移除列表元素
+  // 关闭定时器和恢复暂停
+  if (index === 0 && timer) {
+    clearInterval(timer)
+    timer = null
+  }
+  if (pause.value) pause.value = false
 }
 const addTimeSlice = (typeItem) => {
   const curr = formatTime(typeItem.minute*60)
-  const newTimeSlice = {...typeItem, curr, second: typeItem.minute*60}
+  const newTimeSlice = {...typeItem, curr, second: typeItem.minute*60, isnew: true}
   currList.value.push(newTimeSlice)
+  setTimeout(() => newTimeSlice.isnew = false, 300);
 }
 const execCode = async () => {
   result.value = await window.electron.execCode(searchInput.value)
@@ -193,6 +251,21 @@ function formatTime(seconds) {
   return `${formattedMinutes}:${formattedSeconds}`;
 }
 
+const initMusic = async () => {
+  const mSrc = await window.electron.getConf('tomatoMusic')
+  console.log(111,mSrc);
+  
+  if (!mSrc) return
+  const extend = mSrc.substring(mSrc.lastIndexOf('.'))
+  const data = await window.electron.readMusic(mSrc)
+  if(!data) {
+    window.electron.updateConfig({name:'tomatoMusic', value:''})
+    return
+  } 
+  const blob = new Blob([data], {type:`audio/${extend}`})
+  audioSrc.value = URL.createObjectURL(blob)
+}
+
 onBeforeUnmount(() => {
 });
 
@@ -200,6 +273,7 @@ onBeforeUnmount(() => {
 onMounted(() => {
   window.electron.resizeWindow({width: 406, height: 250})
   getTomatoList()
+  initMusic()
 })
 
 </script>
@@ -289,6 +363,36 @@ onMounted(() => {
       box-shadow:none;
       border: none;
     }
+  }
+}
+
+// 动画
+.anime-in {
+  animation: anime-in 0.3s ease-out;
+}
+.anime-out {
+  animation: anime-out 0.3s ease-in;
+}
+
+@keyframes anime-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes anime-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
   }
 }
 </style>

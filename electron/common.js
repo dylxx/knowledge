@@ -1,9 +1,13 @@
 import fs from 'fs'
+import { app } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
- function deleteFilesInDirectory(directory) {
+const configPath = path.join(app.getPath('userData'), 'userConfig.json');
+const __dirname =dirname(fileURLToPath(import.meta.url))
+
+function deleteFilesInDirectory(directory) {
   fs.readdir(directory, (err, files) => {
     if (err) {
       
@@ -35,8 +39,32 @@ import { dirname } from 'path';
   });
 }
 
-const __dirname =dirname(fileURLToPath(import.meta.url))
-console.log('__dirname::', __dirname);
+function getConfig() {
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath));
+    return {config, configPath}
+  } catch (err) {
+    return null
+  }
+}
+
+function getNestedValue(obj, keys) {
+  let result = obj;
+  for (let key of keys) {
+    if (result && typeof result === 'object' && key in result) {
+      result = result[key];
+    } else {
+      return null; // 如果中途断了就返回null
+    }
+  }
+  return result;
+}
+
+function updateConfig(newConfig) {
+  const config = getConfig()
+  if (!config) return
+  fs.writeFileSync(configPath,JSON.stringify(newConfig), 'utf-8')
+}
 
 // 调用示例
-export {deleteFilesInDirectory, __dirname}
+export {deleteFilesInDirectory, __dirname, getConfig, getNestedValue, updateConfig}
