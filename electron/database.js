@@ -116,6 +116,24 @@ function initDB() {
         console.log('tomato表已创建或已存在');
       }
     });
+    db.run(`
+      CREATE TABLE IF NOT EXISTS pdw (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL,
+        name TEXT,
+        createtime TEXT,
+        password TEXT,
+        email TEXT,
+        remark TEXT,
+        phonenumber TEXT
+      )
+    `, (err) => {
+      if (err) {
+        console.error('创建表失败:', err.message);
+      } else {
+        console.log('pdw表已创建或已存在');
+      }
+    });
   });
 }
 

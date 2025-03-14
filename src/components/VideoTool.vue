@@ -161,7 +161,7 @@ const clearAll = () => {
 }
 
 onMounted(() => {
-  window.electron.resizeWindow({width: 400, height: 175})
+  window.electron.resizeWindow([400, 175])
   window.electron.onUpSuccess((data) => {
     // 只有音视频组合才执行
     if (tool.curr !== 1) return

@@ -26,7 +26,7 @@ const createWindow = () => {
     }
   })
   Menu.setApplicationMenu(null)
-
+  win.webContents.setBackgroundThrottling(false)
   // Menu.setApplicationMenu(null); // 取消默认菜单
 
   if (process.env.NODE_ENV === 'development') {

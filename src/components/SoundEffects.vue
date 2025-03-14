@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
 
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(() => {
-  window.electron.resizeWindow({width: 400, height: 290})
+  window.electron.resizeWindow([400, 290])
   getMusicDirList()
 })
 

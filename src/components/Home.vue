@@ -1,12 +1,12 @@
 <template>
   <div class="main-content" ref="mainContent">
     <div class="moveBar"></div>
-    <a-space class="input-search">
+    <div class="input-search">
       <a-button @click="gotoManage" size="small"><SettingOutlined /></a-button>
-      <a-input ref="mainInput" size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copySel" >
+      <a-input class="main-input" ref="mainInput" size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copySel">
       </a-input>
       <a-button @click="changeTool" size="small"><RightOutlined /></a-button>
-    </a-space>
+    </div>
     <div style="display: flex;justify-content: space-evenly;" v-if="!dataList.list.length">
       <SettingOutlined  class="hoverActive" @click="goto('manage')"/>
       <VideoCameraOutlined class="hoverActive" @click="goto('videoTool')" />
@@ -42,6 +42,8 @@ const router = useRouter();
 const selIndex = ref(0)
 const mainListDom = ref(null)
 const mainInput = ref(null)
+const mainheight = ref(0)
+let toResize = ref(false)
 // methods
 const changeSel = (index) => {
   selIndex.value = index
@@ -52,7 +54,6 @@ const goto = (uri) => {
   router.push(uri)
 }
 const handleKeyDown = (event) => {
-  
   if (event.key === 'ArrowUp') {
     if (selIndex.value > 0) selIndex.value--
     mainListDom.value.scrollTo({top:mainListDom.value.scrollHeight-30, behavior: 'smooth'})
@@ -64,6 +65,7 @@ const handleKeyDown = (event) => {
 };
 // 搜索框
 const onSearch =  debounce(async () => {
+  toResize.value = true
   if (!searchInput.value) {
     dataList.list = []
     return
@@ -72,6 +74,10 @@ const onSearch =  debounce(async () => {
   dataList.list = resList
   selIndex.value = 0
 }, 300);
+
+const resizeWin = () => {
+  window.electron.resizeWindow([null, mainContent.value.offsetHeight + 20])
+}
 
 const gotoManage = () => {
   router.push('/manage')
@@ -106,9 +112,13 @@ onMounted(() => {
   if (mainContent.value) {
     const resizeObserver = new ResizeObserver(entries => {
       entries.forEach(async entry => {
-        const size = {width: Math.ceil(entry.contentRect.width) + 20, height: Math.ceil(entry.contentRect.height) + 20}
-        console.log('新的宽度:', size.width, '新的高度:', size.height)
-        window.electron.resizeWindow(size)
+        // const size = {width: Math.ceil(entry.contentRect.width) + 20, height: Math.ceil(entry.contentRect.height) + 20}
+        // console.log('新的宽度:', size.width, '新的高度:', size.height)
+        // window.electron.resizeWindow(size)
+        if (toResize.value) {
+          window.electron.resizeWindow([null, entry.contentRect.height+ 20])
+          toResize.value = false
+        }
       })
     })
 
@@ -133,21 +143,20 @@ h1 {
   margin: 1em auto;
 }
 .main-content {
-  width: 341px;
+  height: 100%;
+  min-width: 200px;
+  width: 100%;
   margin: 0 auto;
   .input-search {
     background-color: #B1B2FF;
     display: flex;
     flex-direction: row;
-    justify-content: center;
+    justify-content:space-between;
     margin: 0.5em auto;
     padding: 0.5em;
     border-radius: 10px;
     button {
       margin: 0;
-    }
-    input {
-      width: 250px;
     }
   }
   .main-list {
@@ -179,6 +188,11 @@ h1 {
     overflow: hidden;
     max-width: 8em;
     font-size: 0.9em;
+}
+
+.main-input {
+  width: 100%;
+  margin: auto 3px;
 }
 
 </style>

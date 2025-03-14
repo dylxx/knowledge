@@ -20,7 +20,6 @@ contextBridge.exposeInMainWorld('electron', {
   // onConversionError: (channel,callback) => ipcRenderer.on('conversion-error', callback),
   onUpSuccess: (callback) => ipcRenderer.on('onUpSuccess', (_event, value) =>  callback(value)),
   resizeWindow: (size) => ipcRenderer.invoke('resize-window', size),
-  getWindowSize: () => ipcRenderer.invoke('getWindowSize'),
   onSearch: (filter) => ipcRenderer.invoke('onSearch', filter),
   getUngroupNote: () => ipcRenderer.invoke('getUngroupNote'),
   getAllNote: () => ipcRenderer.invoke('getAllNote'),

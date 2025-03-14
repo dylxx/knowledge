@@ -365,7 +365,7 @@ onBeforeUnmount(() => {
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
-  window.electron.resizeWindow({width: 1000, height: 620})
+  window.electron.resizeWindow([1000,620])
 })
 
 // 在组件卸载前移除事件监听器
@@ -382,14 +382,14 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: row;
   margin: 0 auto;
-  width: 1000px;
+  width: 100%;
   height: 600px;
   .group-content {
+    min-width: 167px;
     display: flex;
     flex-direction: column;
     width: 17%;
     height: 100%;
-    min-width: 100px;
     .title-name {
       font-size: small;
       align-self:auto;
@@ -407,6 +407,7 @@ onBeforeUnmount(() => {
 
   .item-content {
     width: 27%;
+    min-width: 265px;
     margin: 5px 2px;
     background-color: #f0f5ff;
     .main-list {

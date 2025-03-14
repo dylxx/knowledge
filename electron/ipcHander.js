@@ -18,14 +18,10 @@ const userDataDir = process.env.NODE_ENV==='development'? path.join(__dirname, '
 function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
   if (win) {
-    console.log(size);
-    win.setSize(size.width, size.height)  // 调整窗口宽度为400，高度为动态计算的值
+    const rsize = win.getSize()
+    console.log([size[0]||rsize[0], size[1]||rsize[1]]);
+    win.setSize(size[0]||rsize[0], size[1]||rsize[1], true)  
   }
-}
-
-function getWindowSize() {
-  const win = BrowserWindow.getFocusedWindow()
-  return win.getSize()
 }
 
 const onSearch = async (event, filter) => {
@@ -335,7 +331,6 @@ const updateConf = (event, params) => {
 }
 
 function setupIpcHandlers() {
-  ipcMain.handle('getWindowSize', getWindowSize)
   ipcMain.handle('resize-window', resizeWindow)
   ipcMain.handle('getUngroupNote',  getUngroupNote)
   ipcMain.handle('getAllNote',  getAllNote)

@@ -12,8 +12,8 @@
           <template #renderItem="{ item, index }">
               <div class="type-list-item" >
                 <a-list-item  class="typeList-item itemHover "  @click="addTimeSlice(item)">
-                  <div style="display: flex; flex-direction: row">
-                    <div class="itemList-title">{{ item.name }}</div>
+                  <div style="display: flex; flex-direction: row;margin: 0 auto;">
+                    <div :title="item.name" class="itemList-title">{{ item.name }}</div>
                   </div>
                 </a-list-item>
               <div style="display: flex;flex-direction: column; width: auto">
@@ -271,7 +271,7 @@ onBeforeUnmount(() => {
 
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(() => {
-  window.electron.resizeWindow({width: 406, height: 250})
+  window.electron.resizeWindow([478,250])
   getTomatoList()
   initMusic()
 })
@@ -289,7 +289,7 @@ onMounted(() => {
   border-radius: 3px;
   background-color:rgb(179, 220, 255);
   .main-left {
-    width: 55%;
+    width: 53%;
     border-radius: 3px;
     margin-right: 10px;
     min-width: 205px;
@@ -303,7 +303,7 @@ onMounted(() => {
     background-color: antiquewhite;
     min-width: 160px;
     margin-right: 6px;
-    width: 40%;
+    width: 45%;
     .main-list {
       border: none;
       height: 86%;
@@ -324,6 +324,10 @@ onMounted(() => {
   background-color: #fff4e6;
   border-radius: 3px;
   margin: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 6em;
   &:hover {
     // background-color: #ffe1ba;
   }
@@ -332,7 +336,7 @@ onMounted(() => {
   white-space: nowrap;       /* 禁止换行 */
   overflow: hidden;           /* 超出部分隐藏 */
   text-overflow: ellipsis;    /* 显示省略号 */
-  max-width: 200px;           /* 设置最大宽度，可以根据需要调整 */
+  max-width: 5em;           /* 设置最大宽度，可以根据需要调整 */
   cursor: default;
 }
 .tool-bar {
