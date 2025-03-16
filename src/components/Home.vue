@@ -17,8 +17,8 @@
       <template #renderItem="{ item, index }">
         <div ref="mainListDom" :class="{'list-item':true,'item-selected':selIndex===index}" @click="copyContent(item)" @mouseenter="changeSel(index)">
           <a-list-item>
-            <div :tabindex="index" @focus="selIndex=index" style="font:  bold 1em/1.5 'Arial', sans-serif;">{{ item.title }}</div>
-            <div class="note-content">{{ item.content }}</div>
+            <div :tabindex="index" @focus="selIndex=index" style="font:  bold 1em/1.5 'Arial', sans-serif;">{{ item.title || item.name }}</div>
+            <div class="note-content">{{ item.content || item.username }}</div>
           </a-list-item>
         </div>
       </template>
@@ -70,7 +70,13 @@ const onSearch =  debounce(async () => {
     dataList.list = []
     return
   }
-  const resList = await window.electron.mainSearch(searchInput.value.split(' '))
+  let resList = []
+  if (searchInput.value === ' ') return
+  if (searchInput.value.startsWith(' ')) {
+    resList = await window.electron.mainSearchPwd(searchInput.value.split(' '))
+  } else {
+    resList = await window.electron.mainSearch(searchInput.value.split(' '))
+  }
   dataList.list = resList
   selIndex.value = 0
 }, 300);
@@ -93,7 +99,8 @@ const copyContent = async (note) => {
 
 const copySel = async () => {
   if (!dataList.list.length) return
-  const text = dataList.list[selIndex.value].content
+  const item = dataList.list[selIndex.value]
+  const text = item.content || item.password
   await navigator.clipboard.writeText(text)
 }
 
@@ -130,7 +137,7 @@ onMounted(() => {
       resizeObserver.disconnect()
     })
   }
-
+  window.electron.resizeWindow([300, 100])
 })
 
 </script>

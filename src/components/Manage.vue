@@ -5,14 +5,14 @@
     <div class="group-content">
       <!-- <span class="title-name">快捷操作</span> -->
       <div class="operate-area">
-        <SettingOutlined @click="showSettingPage=!showSettingPage" :class="{active:showSettingPage}"/>
+        <SettingOutlined @click="changeLeft('setting')" :class="{active:leftPage === 'setting'}"/>
         <AppstoreAddOutlined/>
         <RollbackOutlined @click="router.push('/')" />
       </div>
-      <div v-if="showSettingPage">
-        <Setting/>
+      <div v-show="leftPage ==='setting'">
+        <Setting @unlockPwd="unlockPwd"/>
       </div>
-      <div v-else style="height: 100%">
+      <div v-show="leftPage === 'menu'" style="height: 100%">
         <a-divider style="margin: 0;"><span style="font-size: small">menu</span></a-divider>
         <div class="group-menu">
           <a-menu
@@ -72,34 +72,52 @@
           <PlusCircleOutlined @click="openNewEdit" />
         </template>
       </a-input>
-      <a-list  class="main-list" size="small" bordered :data-source="noteList" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
-        <template #renderItem="{ item }">
-          <div class="main-list-item" draggable="true" @dragstart="onDragStartNote($event,item)" @mouseenter="showDelete(item.uuid)" @mouseleave="hoverItem = ''" @click="openEdit(item)">
-            <a-list-item   :class="{'list-item':true,'selectedNote':editNote.uuid === item.uuid}">
-              <div style="display: flex; flex-direction: row">
-                <div class="itemList-title">{{ item.title }}</div>
-                <!-- <div class="itemList-content" >{{ item.content }}</div> -->
-              </div>
-              <div class="list-item-time">
-                <span v-show="item.uuid !== hoverItem">{{ item.createtime.slice(-8) }}</span>
-                <a-tooltip v-if="item.uuid === hoverItem" >
-                  <a-button @click.stop="deleteNote(item)" size="small" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
-                  <a-button @click.stop="removeGroup(item)" size="small" type="normal" shape="circle" :icon="h(MinusCircleOutlined)" />
-                </a-tooltip>
-              </div>
-            </a-list-item>
-          </div>
+      <!-- note列表 -->
+      <NoteList v-if="listType.type !== 'password'" :dataList="noteList" @clickItem="openEdit($event, 'note')">
+        <template #content="{item}">
+          <a-button @click.stop="deleteNote(item)" size="small" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
+          <a-button @click.stop="removeGroup(item)" size="small" type="normal" shape="circle" :icon="h(MinusCircleOutlined)" />
         </template>
-      </a-list>
+      </NoteList>
+      <!-- 密码列表 -->
+      <NoteList v-if="listType.type === 'password'" :dataList="pwdList" @clickItem="openEdit($event, 'password')">
+        <template #content="{item}">
+          <a-button @click.stop="delPwd(item)" size="small" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
+        </template>
+      </NoteList>
     </div>
     <!-- 编辑栏 -->
     <div class="edit-div">
-      <div v-if="editNote.title || editNote.content">
+      <div v-if="editShow === 'note'">
         <div class="edit-title">
-          <a-input ref="editTitle" @blur="saveNote" style="font: italic small-caps bold 16px/1.5 " v-model:value="editNote.title" :bordered="false" placeholder="标题" />
+          <a-input ref="editTitle" @blur="saveNote" style="font: bold 1.5em/1.5 'Arial', sans-serif" v-model:value="editNote.title" :bordered="false" placeholder="标题" />
         </div>
         <a-divider  style="margin: 0"></a-divider>
         <a-textarea  @blur="saveNote" class="edit-content" v-model:value="editNote.content" placeholder="编辑内容" spellcheck="false" :rows="24" />
+      </div>
+      <div v-if="editShow === 'password'">
+        <a-input ref="editTitle" @blur="savePwd" style="font: bold 1.5em/1.5 'Arial', sans-serif " v-model:value="editPwd.name" :bordered="false" placeholder="标题" />
+        <a-divider  style="margin: 0"></a-divider>
+        <div class="pwd-item">
+          <div class="pwdItem-title"><span>用户名:</span></div>
+          <a-input @blur="savePwd" style="font: italic small-caps bold 10px/1 " v-model:value="editPwd.username" :bordered="false" placeholder="账号" />
+        </div>
+        <a-divider  style="margin: 0"></a-divider>
+        <div class="pwd-item">
+          <div class="pwdItem-title"><span>密码:</span></div>
+          <a-input @blur="savePwd" style="font: italic small-caps bold 10px/1 " v-model:value="editPwd.password" :bordered="false" placeholder="密码" />
+        </div>
+        <a-divider  style="margin: 0"></a-divider>
+        <div class="pwd-item">
+          <div class="pwdItem-title"><span>email:</span></div>
+          <a-input @blur="savePwd" style="font: italic small-caps bold 10px/1 " v-model:value="editPwd.email" :bordered="false" placeholder="email" />
+        </div>
+        <a-divider  style="margin: 0"></a-divider>
+        <div class="pwd-item">
+          <div class="pwdItem-title"><span>电话号码:</span></div>
+          <a-input @blur="savePwd" style="font: italic small-caps bold 10px/1 " v-model:value="editPwd.phonenumber" :bordered="false" placeholder="电话号码" />
+        </div>
+        <a-divider  style="margin: 0"></a-divider>
       </div>
       <div v-else class="deit-default">
         <span><EditOutlined @click="openNewEdit" /></span>
@@ -114,10 +132,11 @@
 import { ref, reactive, watch,computed, onMounted, onBeforeUnmount, h } from "vue";
 import { useRouter } from 'vue-router';
 import { MinusCircleOutlined, FormOutlined,SettingOutlined,
-  AppstoreOutlined, AppstoreAddOutlined, BlockOutlined,
+  AppstoreOutlined, AppstoreAddOutlined, BlockOutlined,LockOutlined,KeyOutlined,
   PlusCircleOutlined,EditOutlined, CloseCircleOutlined,RollbackOutlined } from '@ant-design/icons-vue'
 import  Setting  from "./Setting.vue";
 import "../style/main.less";
+import NoteList from "./module/NoteList.vue";
 
 
 
@@ -129,7 +148,7 @@ const menuSelectedKeys = ref(['allNote']);
 const groupOpenKeys = ref(['1']);
 const groupSelectedKeys = ref(['sub1']);
 const groupListDiv = ref(null)
-let hoverItem = ref('')
+let leftPage = ref('menu')
 let hoverGroup = ref('')
 let keyword = ref('')
 let listType = reactive({
@@ -144,28 +163,66 @@ let editNote = reactive({
   groupuuid: '',
   createtime: '',
 })
+let editPwd = reactive({
+  uuid: '',
+  name: '',
+  username: '',
+  password: '',
+  remark: '',
+  phonenumber: '',
+  email: '',
+  createtime:'',
+})
 let groupList = reactive([])
 let visible = ref(false)
 let visibleDel = ref(false)
 let editGroupName = ref('')
 let editTitle = ref(null)
 let showSettingPage = ref(false)
+let pwdList = ref([])
+let editShow = ref('')
 
-const getItem = (label, key, icon, children, type) => {
+const getItem = (label, key, icon, children, type, disabled) => {
   return {
     key,
     icon,
     children,
     label,
     type,
+    disabled,
   };
 }
-// const items2 = reactive([
-//   {key: 'item', label: 'label', key: 'key 1', icon: 'icon 1', children: [], type: 'type 11'}
-// ])
+const changeLeft = (type) => {
+   leftPage.value = leftPage.value === type? 'menu' : type
+}
+const unlockPwd = async (unlock) => {
+  const pwdMenu = menuItems.find(item => item.key === 'password')
+  pwdMenu.disabled = !unlock
+}
+const delPwd = async (pwd) => {
+  await window.electron.delPwd({uuid:pwd.uuid})
+  refreshList()
+}
+const savePwd = async () => {
+  if (!editPwd.name) return
+  const pwd = {...editPwd}
+  if (!editPwd.uuid) {
+    const result = await window.electron.addPwd(pwd)
+    console.log(2222, result);
+    
+    editPwd.uuid = result.uuid
+    editPwd.createtime = result.createtime
+    console.log('result:::', result);
+    
+  } else {
+    await window.electron.savePwd(pwd)
+  }
+  refreshList()
+}
 const menuItems = reactive([
   getItem('所有片段', 'allNote', () => h(AppstoreOutlined), null, 'allNote'),
-  getItem('未分类', 'unGroup', () => h(BlockOutlined), null, 'unGroup')
+  getItem('未分类', 'unGroup', () => h(BlockOutlined), null, 'unGroup'),
+  getItem('密码', 'password', () => h(KeyOutlined), null, 'password', true)
 ]);
 // methods
 const searchList = async () => {
@@ -201,6 +258,9 @@ const menuClick = (menu) => {
   groupOpenKeys.value.length = 0
   listType.type = menu.key
   refreshList()
+  resetEdit('note')
+  resetEdit('password')
+  editShow.value = ''
 }
 
 const selectedGroup = (group) => {
@@ -243,10 +303,15 @@ const deleteGroup = async (group) => {
 const editGroupCli = () => {
   editGroupUUID.value = hoverGroup.value
 }
-
-const showDelete = (noteUUID) => {
-  hoverItem.value = noteUUID
+const removeGroup = async (note) => {
+  console.log(1111111, note);
+  if (!note.groupuuid) return
+  
+  await window.electron.removeGroup(note.uuid)
+  refreshList()
 }
+
+
 const showDeleteGroup = (groupUUID) => {
   hoverGroup.value = groupUUID
   visible.value = false
@@ -265,33 +330,70 @@ const refreshList = async () => {
     list = await window.electron.getUngroupNote()
   } else if (listType.type === 'group') {
     list = await window.electron.getGroupNote(listType.key)
+  } else if (listType.type === 'password') {
+    pwdList.value = await window.electron.search({name: 'getPasswordList'})
+    // list = await window.electron.
   }
-  
   noteList.push(...list)
 }
 
 
 // 打开新的编辑
 const openNewEdit = () => {
-  editNote.content = ''
-  editNote.title = '标题'
-  editNote.groupUUID = ''
-  editNote.createtime = ''
-  editNote.uuid = ''
-  setTimeout(() => {
-    editTitle.value?.focus()
-  }, 100);
+  if (listType.type === 'password') {
+    editShow.value = 'password'
+  } else {
+    editShow.value = 'note'
+    resetEdit('note')
+    setTimeout(() => {
+      editTitle.value?.focus()
+    }, 100);
+  }
 }
 // 添加笔记
-const openEdit = (note) => {
-  editNote.content = note.content
-  editNote.title = note.title
-  editNote.groupUUID = note.groupUUID
-  editNote.createtime = note.createtime
-  editNote.uuid = note.uuid
+const openEdit = (note, type) => {
+  editShow.value = type
+  resetEdit(type, note)
+}
+const resetEdit = (type, params) => {
+  if (type === 'note') {
+    if (!params) {
+      editNote.content = ''
+      editNote.title = ''
+      editNote.groupUUID = ''
+      editNote.createtime = ''
+      editNote.uuid = ''
+    } else {
+      editNote.content = params.content
+      editNote.title = params.title
+      editNote.groupUUID = params.groupUUID
+      editNote.createtime = params.createtime
+      editNote.uuid = params.uuid
+    }
+  } else if (type === 'password') {
+    if (!params) {
+      editPwd.uuid= ''
+      editPwd.name= ''
+      editPwd.username= ''
+      editPwd.password= ''
+      editPwd.remark= ''
+      editPwd.phonenumber= ''
+      editPwd.email= ''
+      editPwd.createtime= ''
+    } else {
+      editPwd.uuid= params.uuid
+      editPwd.name= params.name
+      editPwd.username= params.username
+      editPwd.password= params.password
+      editPwd.remark= params.remark
+      editPwd.phonenumber= params.phonenumber
+      editPwd.email= params.email
+      editPwd.createtime= params.createtime
+    }
+  }
 }
 const saveNote = async () => {
-  if (!editNote.content || !editNote.title) return
+  if (!editNote.title) return
   const note = {...editNote}
   // 新增/更新
   if (!editNote.uuid) {
@@ -312,15 +414,7 @@ const deleteNote = async (note) => {
   }
 }
 
-const removeGroup = async (note) => {
-  if (!note.groupuuid) return
-  await window.electron.removeGroup(note.uuid)
-  refreshList()
-}
 
-const onDragStartNote = (event, note) => {
-  event.dataTransfer.setData('noteUUID', note.uuid)
-}
 const onDragOver = (event) => {
   event.preventDefault() // 必须阻止默认行为，否则drop事件不会触发
 }
@@ -483,12 +577,7 @@ onBeforeUnmount(() => {
     background-color: #e6f4ff !important;
   }
 }
-.selectedNote {
-  background-color: #c2d5ff !important;
-  :hover {
-    background-color: #c2d5ff !important;
-  }
-}
+
 .list-item {
   padding-right: 0;
   background-color: #dfe4f9;
@@ -529,9 +618,6 @@ onBeforeUnmount(() => {
 .edit-div {
   width: 51%;
   height: 100%;
-  input {
-    font:  bold 1.5em/1.5 'Arial', sans-serif;
-  }
   .edit-content {
     margin: 6px;
     width: 100%;
@@ -569,6 +655,15 @@ input, textarea {
     color: #437fff;
   }
 }
-
+.pwd-item {
+  display: flex;
+  margin-top: 1em;
+  .pwdItem-title {
+    margin: auto 1em;
+    white-space: nowrap;       /* 禁止换行 */
+    font: bold 1em/1.5 'Arial', sans-serif ;
+    color: #6d6d6d;
+  }
+}
 </style>
   

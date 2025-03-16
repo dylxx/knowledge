@@ -56,7 +56,41 @@ const sqls = {
     method: 'run',
     sql:`insert into tomato(uuid,name,createtime,minute) values($uuid,$name,$createtime,$minute)`
   },
-
+  getPasswordList: {
+    method: 'all',
+    sql: `
+      select * 
+      from userpwd
+      order by id desc
+    `
+  },
+  savePwd: {
+    method: 'run',
+    sql: `
+      update userpwd 
+      set createtime=$createtime,
+          username=$username,
+          name=$name,
+          password=$password,
+          email=$email,
+          remark=$remark,
+          phonenumber=$phonenumber
+      where uuid=$uuid
+    `
+  },
+  addPwd: {
+    method: 'run',
+    sql: `
+      insert into userpwd(name,username,password,email,phonenumber,remark,createtime,uuid) 
+      values($name,$username,$password,$email,$phonenumber,$remark,$createtime,$uuid)
+    `
+  },
+  delPwd: {
+    method: 'run',
+    sql: `
+      delete from userpwd where uuid = $uuid
+    `
+  }
 }
 
 // 创建数据库连接
@@ -117,9 +151,10 @@ function initDB() {
       }
     });
     db.run(`
-      CREATE TABLE IF NOT EXISTS pdw (
+      CREATE TABLE IF NOT EXISTS userpwd (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         uuid TEXT NOT NULL,
+        username TEXT,
         name TEXT,
         createtime TEXT,
         password TEXT,
@@ -131,7 +166,7 @@ function initDB() {
       if (err) {
         console.error('创建表失败:', err.message);
       } else {
-        console.log('pdw表已创建或已存在');
+        console.log('password表已创建或已存在');
       }
     });
   });

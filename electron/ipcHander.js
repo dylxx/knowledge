@@ -138,6 +138,13 @@ const mainSearch = async (event, keywords) => {
   return await execSql(sql, params)
 }
 
+const mainSearchPwd = async (event, keywords) => {
+  const conditions = keywords.map(() => `name || ' ' || username LIKE ?`).join(' AND ');
+  const sql = `SELECT * FROM userpwd WHERE ${conditions}`;
+  const params = keywords.map(keyword => `%${keyword}%`);
+  return await execSql(sql, params)
+}
+
 const getConf = (event, params) => {
   const {config} =  getConfig()
   console.log(333,params, config);
@@ -317,6 +324,19 @@ const copyFileToTemp = async (event, params) => {
   return newPath
 }
 
+const savePwd = async (event, params) => {
+  params.createtime = getCurrentTime()
+  return await runDb('savePwd', toParams(params))
+}
+const addPwd = async (event, params) => {
+  console.log(11111111111, params);
+  params.uuid = uuidv4()
+  params.createtime = getCurrentTime()
+  const pwd = {...params}
+  await runDb('addPwd', toParams(params))
+  return pwd
+}
+
 const runSql = async (event, params) => {
   return await runDb(params.name, toParams(params.params) )
 }
@@ -328,6 +348,10 @@ const updateConf = (event, params) => {
   // config.now.tomatoMusic = 'E:\\project\\knowledge\\electron\\userData\\3660d75c-120b-4d28-976f-2f4346a14e89.mp3'
   config.now[params.name] = params.value
   updateConfig(config)
+}
+
+const delPwd = async (event, params) => {
+  await runDb('delPwd', toParams(params))
 }
 
 function setupIpcHandlers() {
@@ -347,6 +371,7 @@ function setupIpcHandlers() {
   ipcMain.handle('removeGroup',  removeGroup)
   ipcMain.handle('search',  search)
   ipcMain.handle('mainSearch',  mainSearch)
+  ipcMain.handle('mainSearchPwd',  mainSearchPwd)
   ipcMain.handle('getConf',  getConf)
   ipcMain.handle('getFilePaths',  getFilePaths)
   ipcMain.handle('processFile',  processFile)
@@ -359,6 +384,9 @@ function setupIpcHandlers() {
   ipcMain.handle('copyFileToTemp',copyFileToTemp)
   ipcMain.handle('runSql',runSql)
   ipcMain.handle('updateConfig',updateConf)
+  ipcMain.handle('savePwd',savePwd)
+  ipcMain.handle('addPwd',addPwd)
+  ipcMain.handle('delPwd', delPwd)
 }
 
 export {setupIpcHandlers}

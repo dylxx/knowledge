@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('electron', {
   removeGroup: (uuid) => ipcRenderer.invoke('removeGroup',uuid),
   search: (params) => ipcRenderer.invoke('search',params),
   mainSearch: (keywords) => ipcRenderer.invoke('mainSearch',keywords),
+  mainSearchPwd: (keywords) => ipcRenderer.invoke('mainSearchPwd',keywords),
   getConf:(params) => ipcRenderer.invoke('getConf', params),
   getFilePaths:(files) => ipcRenderer.invoke('getFilePaths', files),
   processFile: (fileData) => ipcRenderer.invoke('processFile', fileData),
@@ -49,6 +50,9 @@ contextBridge.exposeInMainWorld('electron', {
   copyFileToTemp: (params) => ipcRenderer.invoke('copyFileToTemp', params),
   runSql: (params) => ipcRenderer.invoke('runSql', params),
   updateConfig: (params) => ipcRenderer.invoke('updateConfig', params),
+  savePwd: (params) => ipcRenderer.invoke('savePwd', params),
+  addPwd: (params) => ipcRenderer.invoke('addPwd', params),
+  delPwd: (params) => ipcRenderer.invoke('delPwd', params),
 });
 
 window.addEventListener('DOMContentLoaded', () => {
