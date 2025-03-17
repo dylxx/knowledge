@@ -90,7 +90,14 @@ const sqls = {
     sql: `
       delete from userpwd where uuid = $uuid
     `
-  }
+  },
+  getPwdSearch: {
+    method: 'all',
+    sql:`SELECT *
+    FROM userpwd
+    WHERE name like $keyword or username like $keyword
+    order by createtime desc;`
+  },
 }
 
 // 创建数据库连接

@@ -15,6 +15,9 @@ import {parseFile} from 'music-metadata'
 const rootPath = path.dirname(app.getPath('exe'));
 const tempDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'temp'): path.join(rootPath, 'temp')
 const userDataDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'userData'): path.join(rootPath, 'userData')
+const keyMap = {
+  password: process.env.PWD_KEY
+}
 function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
   if (win) {
@@ -115,7 +118,19 @@ const removeGroup = (event, uuid) => {
 }
 
 const search = async (evnet, params) => {
-  const list =  await query(params.name, toParams(params.params))
+  // decrypt: ['password', 'password']
+  let list =  await query(params.name, toParams(params.params))
+  // 解密处理
+  if(params.decrypt) {
+    list = list.map(item => {
+      params.decrypt.map(item2 => {
+        console.log(11111111111, keyMap);
+        
+        item[item2[0]] = utils.decrypt(item[item2[0]], keyMap[item2[1]])
+      })
+      return item
+    })
+  }
   console.log('list:::--', list);
   return list
 }
@@ -323,14 +338,14 @@ const copyFileToTemp = async (event, params) => {
 
 const savePwd = async (event, params) => {
   params.createtime = getCurrentTime()
-  params.password = utils.encrypt(params.password)
+  params.password = utils.encrypt(params.password, process.env.PWD_KEY)
   return await runDb('savePwd', toParams(params))
 }
 const addPwd = async (event, params) => {
   params.uuid = uuidv4()
   params.createtime = getCurrentTime()
   const pwd = {...params}
-  params.password = utils.encrypt(params.password)
+  params.password = utils.encrypt(params.password, process.env.PWD_KEY)
   await runDb('addPwd', toParams(params))
   return pwd
 }
@@ -356,7 +371,7 @@ const getPwdList = async (evnet, params) => {
   const list =  await query('getPasswordList')
   // return list
   return list.map(item => {
-    item.password = utils.decrypt(item.password)
+    item.password = utils.decrypt(item.password, process.env.PWD_KEY)
     return item
   })
 }

@@ -227,6 +227,18 @@ const menuItems = reactive([
 ]);
 // methods
 const searchList = async () => {
+  if(listType.type === 'password') {
+    const params ={
+      name: 'getPwdSearch',
+      decrypt: [['password','password']],
+      params: {
+        keyword:`%${keyword.value}%`
+      }
+    }
+    const list = await window.electron.search(params)
+    pwdList.value = list
+    return
+  }
   const list = await window.electron.search({name:'getNoteSearch', params: {keyword: `%${keyword.value}%`}})
   console.log('list:::::', list);
   noteList.length = 0
@@ -259,6 +271,7 @@ const menuClick = (menu) => {
   groupOpenKeys.value.length = 0
   listType.type = menu.key
   refreshList()
+  keyword.value = ''
   resetEdit('note')
   resetEdit('password')
   editShow.value = ''
@@ -305,7 +318,6 @@ const editGroupCli = () => {
   editGroupUUID.value = hoverGroup.value
 }
 const removeGroup = async (note) => {
-  console.log(1111111, note);
   if (!note.groupuuid) return
   
   await window.electron.removeGroup(note.uuid)
@@ -333,8 +345,6 @@ const refreshList = async () => {
     list = await window.electron.getGroupNote(listType.key)
   } else if (listType.type === 'password') {
     pwdList.value = await window.electron.getPwdList()
-    // pwdList.value = dataList.map(item => item.password = utils.decrypt(item.password))
-    // list = await window.electron.
   }
   noteList.push(...list)
 }

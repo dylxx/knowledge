@@ -1,11 +1,11 @@
 
 import  { app, BrowserWindow, Menu, globalShortcut,Tray, ipcMain } from 'electron'
+import 'dotenv/config';
 import {setupIpcHandlers} from './ipcHander.js'
 import { deleteFilesInDirectory, __dirname } from './common.js'
 import path from 'path'
 import {getWindow, createWindow} from './createWindow.js'
 import {init} from './init.js'
-import 'dotenv/config';
 
 let win
 app.whenReady().then(() => {

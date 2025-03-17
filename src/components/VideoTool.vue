@@ -173,7 +173,6 @@ onMounted(() => {
     }
   })
   window.electron.onConversionProgress((data) => {
-    console.log(1111111111, fileData.list.length);
     const file = fileData.list.find(item => item.id === data.id)
     if (!file) return
     file.percent = Math.round(data.percent)
