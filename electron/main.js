@@ -5,6 +5,7 @@ import { deleteFilesInDirectory, __dirname } from './common.js'
 import path from 'path'
 import {getWindow, createWindow} from './createWindow.js'
 import {init} from './init.js'
+import 'dotenv/config';
 
 let win
 app.whenReady().then(() => {
@@ -40,10 +41,6 @@ ipcMain.on('ondragstart', (event, filePath) => {
     icon: path.join(__dirname, 'assets/eye.png')
   })
 })
-
-console.log(111111, __dirname);
-
-console.log(22222, path.join(__dirname, 'temp'));
 
 deleteFilesInDirectory( path.join(__dirname, 'temp'))
 init()

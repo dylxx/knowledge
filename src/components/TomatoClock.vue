@@ -70,7 +70,7 @@ import { CloseOutlined,PlusOutlined,AlertOutlined,PlayCircleOutlined,RollbackOut
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
-import { getCurrentTime, toParams  } from "../js/tool";
+import { getCurrentTime, toParams  } from "../js/utils";
 import "../style/main.less";
 
 // 数据
@@ -231,7 +231,7 @@ const backHome = () => {
   router.push('/')
 }
 const gotoNext = () => {
-  router.push('/tomatoClock')
+  router.push('/diary')
 }
 
 function formatTime(seconds) {

@@ -137,6 +137,7 @@ import { MinusCircleOutlined, FormOutlined,SettingOutlined,
 import  Setting  from "./Setting.vue";
 import "../style/main.less";
 import NoteList from "./module/NoteList.vue";
+import utils from "../js/utils";
 
 
 
@@ -189,7 +190,7 @@ const getItem = (label, key, icon, children, type, disabled) => {
     children,
     label,
     type,
-    disabled,
+    disabled: false,
   };
 }
 const changeLeft = (type) => {
@@ -202,18 +203,18 @@ const unlockPwd = async (unlock) => {
 const delPwd = async (pwd) => {
   await window.electron.delPwd({uuid:pwd.uuid})
   refreshList()
+  if (pwd.uuid === editPwd.uuid) {
+    openNewEdit()
+    editShow.value = ''
+  }
 }
 const savePwd = async () => {
   if (!editPwd.name) return
   const pwd = {...editPwd}
   if (!editPwd.uuid) {
     const result = await window.electron.addPwd(pwd)
-    console.log(2222, result);
-    
     editPwd.uuid = result.uuid
     editPwd.createtime = result.createtime
-    console.log('result:::', result);
-    
   } else {
     await window.electron.savePwd(pwd)
   }
@@ -331,7 +332,8 @@ const refreshList = async () => {
   } else if (listType.type === 'group') {
     list = await window.electron.getGroupNote(listType.key)
   } else if (listType.type === 'password') {
-    pwdList.value = await window.electron.search({name: 'getPasswordList'})
+    pwdList.value = await window.electron.getPwdList()
+    // pwdList.value = dataList.map(item => item.password = utils.decrypt(item.password))
     // list = await window.electron.
   }
   noteList.push(...list)
@@ -342,6 +344,7 @@ const refreshList = async () => {
 const openNewEdit = () => {
   if (listType.type === 'password') {
     editShow.value = 'password'
+    resetEdit('password')
   } else {
     editShow.value = 'note'
     resetEdit('note')
@@ -410,7 +413,7 @@ const deleteNote = async (note) => {
   refreshList()
   if (note.uuid === editNote.uuid) {
     openNewEdit()
-    editNote.title = ''
+    editShow.value = ''
   }
 }
 

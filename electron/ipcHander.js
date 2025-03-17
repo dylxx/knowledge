@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid'
 import {query, runDb, execSql} from './database.js'
 import ffmpeg from 'fluent-ffmpeg'
 import {getWindow} from './createWindow.js'
-import { deleteFilesInDirectory, __dirname,getConfig, getNestedValue, updateConfig } from './common.js'
+import utils,{deleteFilesInDirectory, __dirname,getConfig, updateConfig } from './common.js'
 import mime from 'mime-types'
 import {parseFile} from 'music-metadata'
 
@@ -147,8 +147,6 @@ const mainSearchPwd = async (event, keywords) => {
 
 const getConf = (event, params) => {
   const {config} =  getConfig()
-  console.log(333,params, config);
-  
   return config.now[params]
 }
 
@@ -309,7 +307,6 @@ const readMusic = async (evnet, path) => {
     const result = await fs.promises.readFile(path)
     return result
   } catch (error) {
-    console.log(222222222);
     return null
   }
 }
@@ -326,13 +323,14 @@ const copyFileToTemp = async (event, params) => {
 
 const savePwd = async (event, params) => {
   params.createtime = getCurrentTime()
+  params.password = utils.encrypt(params.password)
   return await runDb('savePwd', toParams(params))
 }
 const addPwd = async (event, params) => {
-  console.log(11111111111, params);
   params.uuid = uuidv4()
   params.createtime = getCurrentTime()
   const pwd = {...params}
+  params.password = utils.encrypt(params.password)
   await runDb('addPwd', toParams(params))
   return pwd
 }
@@ -352,6 +350,15 @@ const updateConf = (event, params) => {
 
 const delPwd = async (event, params) => {
   await runDb('delPwd', toParams(params))
+}
+
+const getPwdList = async (evnet, params) => {
+  const list =  await query('getPasswordList')
+  // return list
+  return list.map(item => {
+    item.password = utils.decrypt(item.password)
+    return item
+  })
 }
 
 function setupIpcHandlers() {
@@ -387,6 +394,7 @@ function setupIpcHandlers() {
   ipcMain.handle('savePwd',savePwd)
   ipcMain.handle('addPwd',addPwd)
   ipcMain.handle('delPwd', delPwd)
+  ipcMain.handle('getPwdList', getPwdList)
 }
 
 export {setupIpcHandlers}

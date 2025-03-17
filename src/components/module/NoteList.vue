@@ -7,7 +7,7 @@
             <div class="itemList-title">{{ item.title || item.name }}</div>
           </div>
           <div class="list-item-time">
-            <span v-show="item.id !== hoverItem">{{ item.createtime.slice(-8) }}</span>
+            <span v-show="item.id !== hoverItem">{{ item.createtime.slice(-14, -3) }}</span>
             <!-- <a-tooltip v-if="true" > -->
               <a-tooltip v-if="item.id === hoverItem" >
               <slot name="content" :item="item"></slot>

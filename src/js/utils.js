@@ -1,3 +1,4 @@
+
 function getCurrentTime() {
   const now = new Date();
 
@@ -36,5 +37,10 @@ function getNestedValue(obj, keys) {
   return result;
 }
 
+const utils = {
+  getCurrentTime,
+  toParams,
+}
+export default utils
 
 export {getCurrentTime, toParams};
