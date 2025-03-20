@@ -28,7 +28,7 @@ const createWindow = () => {
   Menu.setApplicationMenu(null)
   win.webContents.setBackgroundThrottling(false)
   // Menu.setApplicationMenu(null); // 取消默认菜单
-
+  
   if (process.env.NODE_ENV === 'development') {
     win.loadURL('http://localhost:3000')  // 假设 Vite 服务器运行在 3000 端口
   } else {
@@ -36,7 +36,7 @@ const createWindow = () => {
     // win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
   
-  tray = new Tray(path.join(__dirname, '../public/no.ico'));
+  tray = new Tray(path.join(__dirname, '../dist/no.ico'));
   tray.setToolTip('note');
 
   // 设置托盘右键菜单
@@ -88,7 +88,14 @@ const createWindow = () => {
   win.once('ready-to-show', () => {
     win.show();
   });
-
+  app.on("ready", async () => {
+    try {
+      await session.defaultSession.clearCache();
+      console.log("缓存已清理");
+    } catch (error) {
+      console.error("清理缓存失败:", error);
+    }
+  });
   app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
       app.quit();
@@ -100,10 +107,8 @@ const createWindow = () => {
       const bounds = {x:config.now.placeX, y:config.now.placeY,width:config.now.width,height:config.now.height}
       const display = screen.getPrimaryDisplay();
       const { width, height } = display.workAreaSize;
-      console.log(33333, display.workAreaSize, bounds);
       bounds.x = Math.max(0, Math.min(bounds.x, width - bounds.width));
       bounds.y = Math.max(0, Math.min(bounds.y, height - bounds.height));
-      console.log(33333, bounds);
       return bounds
     } catch (err) {
       console.error(err);
@@ -118,8 +123,6 @@ const createWindow = () => {
       config.now.placeY = bounds.y
       config.now.width = bounds.width
       config.now.height = bounds.height
-      console.log(config);
-      
       fs.writeFileSync(configPath, JSON.stringify(config));
     }
   }

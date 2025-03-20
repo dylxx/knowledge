@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [vue()],
   publicPath: './',
   base: './',
+  build:{
+    outDir: 'dist',
+  },
   resolve: {
     extensions: ['.js', '.ts', '.vue']
   },

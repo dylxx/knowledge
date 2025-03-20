@@ -173,7 +173,7 @@ function initDB() {
       if (err) {
         console.error('创建表失败:', err.message);
       } else {
-        console.log('password表已创建或已存在');
+        console.log('userpwd表已创建或已存在');
       }
     });
   });

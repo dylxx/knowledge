@@ -38,7 +38,7 @@ contextBridge.exposeInMainWorld('electron', {
   mainSearchPwd: (keywords) => ipcRenderer.invoke('mainSearchPwd',keywords),
   getConf:(params) => ipcRenderer.invoke('getConf', params),
   getFilePaths:(files) => ipcRenderer.invoke('getFilePaths', files),
-  processFile: (fileData) => ipcRenderer.invoke('processFile', fileData),
+  processFile: (fileData, transFormat) => ipcRenderer.invoke('processFile', fileData, transFormat),
   uploadFile: (fileData, dirType) => ipcRenderer.invoke('uploadFile', fileData, dirType),
   clearTempFile: () => ipcRenderer.invoke('clearTempFile'),
   margeToMp4: (fileData) => ipcRenderer.invoke('margeToMp4', fileData),

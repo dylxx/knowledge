@@ -1,0 +1,36 @@
+{
+  "appId": "com.example.myapp",
+  "productName": "mytool",
+  "files": [
+    "**/*",
+    "!**/*.map"  
+  ],
+  "directories": {
+    "output": "app" 
+  },
+  "extraResources": [
+    {
+      "from": "assets/",
+      "to": "assets/",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "./.env.product",
+      "to": "./.env"
+    },
+    {
+      "from": "public",
+      "to": "public",
+      "filter": ["**/*"]
+    },
+    {
+      "from": "dist",
+      "to": "dist",
+      "filter": ["**/*"]
+    }
+  ],
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}

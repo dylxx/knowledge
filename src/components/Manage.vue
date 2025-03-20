@@ -240,7 +240,6 @@ const searchList = async () => {
     return
   }
   const list = await window.electron.search({name:'getNoteSearch', params: {keyword: `%${keyword.value}%`}})
-  console.log('list:::::', list);
   noteList.length = 0
   noteList.push(...list)
 }

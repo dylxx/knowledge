@@ -1440,7 +1440,7 @@ dotenv-expand@^11.0.6:
   dependencies:
     dotenv "^16.4.5"
 
-dotenv@^16.4.5:
+dotenv@^16.4.5, dotenv@^16.4.7:
   version "16.4.7"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.7.tgz#0e20c5b82950140aa99be360a8a5f52335f53c26"
   integrity sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==
@@ -1481,6 +1481,11 @@ electron-builder@^25.1.8:
     lazy-val "^1.0.5"
     simple-update-notifier "2.0.0"
     yargs "^17.6.2"
+
+electron-log@^5.3.2:
+  version "5.3.2"
+  resolved "https://registry.yarnpkg.com/electron-log/-/electron-log-5.3.2.tgz#76aa0091f9cbf0d304546ca6f271ebb6ad953bf4"
+  integrity sha512-EFI5MFFEzFJU5gyhJNpKQhfGfrRP9IWzSu0sSxrWXasWKvVAOFgBySafX8W1pbPKa/w8/DDPu2bBBtVZJdDsnw==
 
 electron-publish@25.1.7:
   version "25.1.7"

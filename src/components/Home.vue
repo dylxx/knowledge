@@ -49,8 +49,6 @@ const changeSel = (index) => {
   selIndex.value = index
 }
 const goto = (uri) => {
-  console.log(uri);
-  
   router.push(uri)
 }
 const handleKeyDown = (event) => {

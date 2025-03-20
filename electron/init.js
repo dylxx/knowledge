@@ -23,7 +23,7 @@ const init = () => {
   if (!fs.existsSync(userDataDir)) {
     fs.mkdirSync(userDataDir, { recursive: true });
   }
-  console.log('日志文件路径:', logFilePath);
+  // console.log('日志文件路径:', logFilePath);
 
   // 捕获错误并写入日志
   process.on('uncaughtException', (error) => {

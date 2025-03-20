@@ -22,7 +22,6 @@ function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
   if (win) {
     const rsize = win.getSize()
-    console.log([size[0]||rsize[0], size[1]||rsize[1]]);
     win.setSize(size[0]||rsize[0], size[1]||rsize[1], true)  
   }
 }
@@ -83,9 +82,6 @@ function getCurrentTime() {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-console.log(getCurrentTime());
-// 输出: '2023-10-05 14:30:45'（根据当前时间）
-
 const deleteNote = async (event, uuid) => {
   await runDb('deleteNoteByUUID', toParams({uuid}))
 }
@@ -124,14 +120,12 @@ const search = async (evnet, params) => {
   if(params.decrypt) {
     list = list.map(item => {
       params.decrypt.map(item2 => {
-        console.log(11111111111, keyMap);
         
         item[item2[0]] = utils.decrypt(item[item2[0]], keyMap[item2[1]])
       })
       return item
     })
   }
-  console.log('list:::--', list);
   return list
 }
 
@@ -168,25 +162,25 @@ const getConf = (event, params) => {
 const getFilePaths = (event, fileEvent) => {
 }
 
-const processFile = async (event, fileData) => {
+const processFile = async (event, fileData, transFormat) => {
+  console.log(1111, fileData);
   const fileInfo = uploadFile(null, fileData, 'temp')
-  const newFilePath = path.join(tempDir, `${fileInfo.oriName}.mp4`)
-  convertToMp4(fileInfo.path,newFilePath, fileInfo)
+  const sampleName = fileData.name.substring(0, fileData.name.lastIndexOf('.'))
+  fileInfo.newFileName = `${sampleName}.${transFormat}`
+  convertMedia(fileInfo.fullName, sampleName, transFormat, fileInfo)
 }
 
 const uploadFile = (event, fileData, dirType) => {
-  const dir = ({'temp': tempDir, 'userData': userDataDir})[dirType]
-  const dotIndex = fileData.name.lastIndexOf('.')
-  const simpleName = fileData.name.substring(0, dotIndex);
-  const extension = fileData.name.substring(dotIndex);
   const uuid = fileData.id || uuidv4()
+  const name = fileData.fixName ? fileData.fixName : uuid
+  const dir = ({'temp': tempDir, 'userData': userDataDir})[dirType]
+  const extension = fileData.name.substring(fileData.name.lastIndexOf('.'));
   // 确定固定名字
-  const filePath = fileData.fixName ? path.join(dir, `${fileData.fixName}${extension}`) : path.join(dir, `${uuid}${extension}`)
-  const relPath = `../${dirType}/${uuid}${extension}`
+  const fullName = `${name}${extension}`
+  const filePath = path.join(dir, fullName)
   fs.writeFileSync(filePath, Buffer.from(fileData.content))
-  const result = {id:fileData.id, path:filePath,relPath, oriName: simpleName, type: fileData.type}
+  const result = {id: fileData.id, name, extension, path: filePath, fullName}
   const win = getWindow()
-  console.log('123123123');
   win.webContents.send('onUpSuccess', result);
   return result
 }
@@ -204,7 +198,36 @@ const convertToMp4 = async (inputFilePath, outputFilePath, backParams) => {
   })
   .on('end', () => {
     win.webContents.send('onConversionFinish', {...backParams,path:outputFilePath}); // 例如，发送到渲染进程更新进度条
-    console.log('转换完成！');
+  })
+  .on('error', (err, stdout, stderr) => {
+    win.webContents.send('conversion-error', {...backParams}); // 例如，发送到渲染进程更新进度条
+    console.error('发生错误:', err);
+    console.error('FFmpeg 错误输出:', stderr);
+  })
+  .run();
+}
+
+/**
+ * 
+ * @param {*} inFilename 临时文件文件名(包含后缀)
+ * @param {*} outFilename 输出临时文件名(不包含后缀)
+ * @param {*} format 格式
+ * @param {*} backParams 通知附带参数
+ */
+const convertMedia = async (inFilename, outFilename,format, backParams) => {
+  const inputFilePath = path.join(tempDir, inFilename)
+  const outputFilePath = path.join(tempDir, outFilename) + `.${format}`
+  const win = getWindow()
+  ffmpeg(inputFilePath)
+  .output(outputFilePath)
+  .on('progress', (progress) => {
+    // 获取进度信息
+    const { percent } = progress;
+    // 可以在这里触发渲染进程的 IPC 发送进度数据到 UI
+    win.webContents.send('onConversionProgress', {percent,...backParams}); // 例如，发送到渲染进程更新进度条
+  })
+  .on('end', () => {
+    win.webContents.send('onConversionFinish', {...backParams,path:outputFilePath}); // 例如，发送到渲染进程更新进度条
   })
   .on('error', (err, stdout, stderr) => {
     win.webContents.send('conversion-error', {...backParams}); // 例如，发送到渲染进程更新进度条
@@ -215,7 +238,6 @@ const convertToMp4 = async (inputFilePath, outputFilePath, backParams) => {
 }
 
 const margeToMp4 = (event, fileData) => {
-  console.log('filedata:::', fileData);
   const simpleName = fileData.name.substring(0,fileData.name.lastIndexOf('.'))
   const outputPath = path.join(tempDir, `${simpleName}.mp4`); // 输出文件路径
   const win = getWindow()
@@ -230,7 +252,6 @@ const margeToMp4 = (event, fileData) => {
     .on('end', () => {
       const resp = {id:fileData.id,aFilePath:fileData.aFilePath,vFilePath:fileData.vFilePath,path:outputPath}
       win.webContents.send('margeToMp4Finish', resp);
-      console.log('音视频合并完成');
     })
     .on('error', (err) => {
       console.error('合并过程中发生错误:', err);
@@ -357,7 +378,6 @@ const runSql = async (event, params) => {
 const updateConf = (event, params) => {
   
   const {config} = getConfig()
-  console.log(1111, config);
   // config.now.tomatoMusic = 'E:\\project\\knowledge\\electron\\userData\\3660d75c-120b-4d28-976f-2f4346a14e89.mp3'
   config.now[params.name] = params.value
   updateConfig(config)
