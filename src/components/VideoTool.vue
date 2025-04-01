@@ -24,33 +24,58 @@
         <li v-for="(file,index) in fileData.list" :key="index">
           <div style="display: flex">
             <LinkOutlined style="margin:auto 3px"></LinkOutlined>
-            <div class="transMp4-FileName" style="margin: auto 5px; font-size: 0.8em"  draggable="true" @dragstart="onDragStartFile($event,file)">{{ file.name }}</div>
-            <a-progress :percent="file.percent" size="small" style="margin: auto" />
+            <div class="transMp4-FileName" :title="file.name" draggable="true" @dragstart="onDragStartFile($event,file)">{{ file.name }}</div>
+            <a-progress :status="file.active" :percent="file.percent" size="small" style="margin: auto;min-width: 20%" />
             <!-- <DeleteOutlined class="delIcon" @click="deleteFile(file)"  /> -->
             <!-- <DownloadOutlined v-if="file.convert" @click="downlaodFile(file)" class="downloadIcon"/> -->
           </div>
         </li>
       </ul>
       <div class="tool-bar">
-        <a-tooltip>
-          <a-popover v-model:open="formatVisible" trigger="click" placement="leftTop">
-            <template #content>
-              <div style="height: 70px">
+        <a-tooltip class="tool-item">
+          <a-popover trigger="hover" v-model:open="formatVisible" placement="leftTop">
+            <template #content >
+              <div style="height: 90px;margin: -6px">
                 <a-tree
-                 class="scoll"
+                  class="scoll formatTree"
                   v-model:selectedKeys="selectedKeys"
                   v-model:expandedKeys="expandedKeys"
                   :tree-data="treeData"
+                  size="small"
                   @select="selTree"
                 >
+                <template #switcherIcon="{ switcherCls, key }">
+                  <CaretDownOutlined :class="switcherCls" @mouseenter="expandedKeys=[key]"/>
+                </template>
                 </a-tree>
               </div>
             </template>
-            <CalculatorOutlined class="hoverActive" />
+            <MenuFoldOutlined class="hoverActive"/>
           </a-popover>
         </a-tooltip>
-        <DeleteOutlined class="clear-tool" title="清理列表和缓存" @click="clearAll"/>
-        <RetweetOutlined class="hoverActive" title="下一个" @click="gotoPage('next')" />
+        <DeleteOutlined class="hoverActive tool-item" title="清理列表和缓存" @click="clearAll"/>
+        <DeliveredProcedureOutlined class="hoverActive tool-item" title="获取剪切板图片" @click="copyPhotoFromPlate" />
+        <RetweetOutlined class="hoverActive tool-item" title="功能切换" @click="gotoPage('next')" />
+      </div>
+      <div class="tool-bar">
+        <a-tooltip class="tool-item">
+          <a-popover trigger="hover" v-model:open="deviceTooltip.formatVisible" placement="leftTop">
+            <template #content >
+              <div style="height: 70px">
+                <ul class="deviceUl">
+                  <li 
+                    :class="{selActive:deviceTooltip.selected === item}" 
+                    class="maxStr" v-for="(item, index) in deviceList" 
+                    @click="deviceTooltip.selected = item;deviceTooltip.formatVisible=false" 
+                    :key="index">{{ item }}
+                  </li>
+                </ul>
+              </div>
+            </template>
+            <MenuFoldOutlined class="hoverActive" />
+          </a-popover>
+        </a-tooltip>
+        <SoundOutlined :class="{doActive:recording.doing}" class="hoverActive tool-item" title="录音" @click="record"/>
       </div>
     </div>
   </div>
@@ -59,33 +84,50 @@
 <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount,watchEffect } from "vue";
 // import { settingFilled, StarFilled, StarTwoTone } from 'ant-design/icons-vue';
-import { LinkOutlined,CalculatorOutlined,RetweetOutlined,DownOutlined,DeleteOutlined,DownloadOutlined,UploadOutlined,RollbackOutlined,LeftOutlined,RightOutlined } from '@ant-design/icons-vue'
+import { LinkOutlined,CaretDownOutlined,DeliveredProcedureOutlined,CalculatorOutlined,
+  RetweetOutlined,DeleteOutlined,UploadOutlined,RollbackOutlined,LeftOutlined,RightOutlined,
+  MenuFoldOutlined,SoundOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
 import "../style/main.less";
+import utils,{ getCurrentTime } from "../js/utils";
 
 // 数据
 const router = useRouter();
 const fileData = reactive({list:[]})
-const expandedKeys = ref(['']);
-const selectedKeys = ref(['']);
+const expandedKeys = ref([]);
+const selectedKeys = ref([]);
+const deviceTooltip = reactive({
+  selected: '',
+  formatVisible: false
+})
+const deviceList = ref([])
 let tool = reactive({
   curr: 0,
   max: 1
+})
+let recording = reactive({
+  doing:false,
+  id:0
 })
 let formatVisible = ref(false)
 const treeData = [
   {title: '视频', key: '视频',children:[
       {title: 'mp4', key: 'mp4'},
+      {title: 'mkv', key: 'mkv'},
+      {title: 'webm', key: 'webm'},
     ]
   },
   {title: '音频', key: '音频',children:[
       {title: 'mp3', key: 'mp3'},
+      {title: 'wav', key: 'wav'},
     ]
   },
   {title: '图片', key: '图片',children:[
       {title: 'png', key: 'png'},
+      {title: 'jpg', key: 'jpg'},
+      {title: 'webp', key: 'webp'},
     ]
   },
 ]
@@ -96,6 +138,67 @@ const selTree = (keys, e) => {
     transFormat.value = e.node.key
     formatVisible.value = false
   }
+}
+const record = async () => {
+  if (recording.doing) {
+    recordStop()
+  } else {
+    recordStart()
+  }
+  recording.doing = !recording.doing
+  // const resp = window.electron.toRecord(params)
+}
+const recordStart = async () => {
+  const device = deviceTooltip.selected ? deviceTooltip.selected : deviceList.value[0]
+  console.log(222, device);
+  
+  const resp = await window.electron.toRecord({type: 'start', device})
+  const {id,name,type,path} = resp
+  recording.id = id
+  fileData.list.push({id,name,type,path,percent:99,active:'active'})
+  console.log('filedata::::', fileData.list);
+}
+
+const recordStop = async () => {
+  const device = deviceTooltip.selected ? deviceTooltip.selected : deviceList.value[0]
+  await window.electron.toRecord({type: 'stop', device})
+  console.log(111);
+  const file = fileData.list.find(item => item.id === recording.id)
+  recording.id = 0
+  file.percent = 100
+  file.active = ''
+}
+const copyPhotoFromPlate = async () => {
+  if (!navigator.clipboard || !navigator.clipboard.read) {
+    alert("当前浏览器不支持读取剪切板内容！");
+    return;
+  }
+  const clipboardItems = await navigator.clipboard.read();
+  for (const item of clipboardItems) {
+    for (const type of item.types) {
+      if (type.startsWith("image/")) {
+        
+        const blob = await item.getType(type)
+        const arrayBuffer = await blob.arrayBuffer(); // 获取图片数据
+        const uuid = crypto.randomUUID()
+        const timestamp = utils.getCurrentTime('YYYY-MM-DD_HH-mm-ss')
+        const name = `${timestamp}.${type.replace('image/','')}`;
+        fileData.list.push({id:uuid, name: name})
+        const result = await window.electron.uploadFile ({
+          id: uuid,
+          name,
+          type,
+          fixName: timestamp,
+          content: arrayBuffer
+        }, 'temp')
+        const file = fileData.list.find(item => item.id === result.id)
+        file.path = result.path
+        file.percent = 100
+        return;
+      }
+    }
+  }
+  message.error('剪切板没有图片')
 }
 const backHome = () => {
   router.push('/')
@@ -173,17 +276,23 @@ const dropFileMerge = (event) => {
     const reader = new FileReader();
     const file = files[index];
     // fileData.list.push({id:uuid, name: file.name, size: file.size})
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const fileContent = e.target.result;
       
       // 将文件内容传递到主进程进行处理
-      window.electron.uploadFile({
+      const data = await window.electron.uploadFile({
         id: uuid,
         name: file.name,
         type: file.type,
         size: file.size,
         content: fileContent
       }, 'temp');
+      const newFile = fileData.list.find(item => item.id === data.id)
+      if(file.type.includes('video')) newFile.vFilePath = data.path
+      if(file.type.includes('audio')) newFile.aFilePath = data.path
+      if(newFile.aFilePath && newFile.vFilePath) {
+        window.electron.margeToMp4({...newFile})
+      }
     };
     reader.readAsArrayBuffer(file);
   }
@@ -196,32 +305,34 @@ function checkMergeFile(files) {
   if(!typsStr.includes('audio')) return {pass: false, info: '未发现音频文件'}
   return {pass: true, info: ''}
 }
+
+const init = async () => {
+  // 获取录音设备列表:
+  let list = await window.electron.getAudioDevices()
+  list.sort((a,b) => b.includes('立体声混音') - a.includes('立体声混音'))
+  deviceList.value = list
+}
 // 清理列表和缓存
 const clearAll = () => {
   fileData.list = []
   window.electron.clearTempFile()
 }
+watch(formatVisible, (newValue, oldValue) => {
+  if (newValue === false) {
+    setTimeout(() => {
+      expandedKeys.value = []
+    }, 300); 
+  }
+});
 
 onMounted(() => {
   window.electron.resizeWindow([400, 175])
-  window.electron.onUpSuccess((data) => {
-    // 只有音视频组合才执行
-    if (tool.curr !== 1) return
-    const file = fileData.list.find(item => item.id === data.id)
-    if(data.type.includes('video')) file.vFilePath = data.path
-    if(data.type.includes('audio')) file.aFilePath = data.path
-    if(file.aFilePath && file.vFilePath) {
-      window.electron.margeToMp4({...file})
-    }
-  })
   window.electron.onConversionProgress((data) => {
     const file = fileData.list.find(item => item.id === data.id)
     if (!file) return
     file.percent = Math.round(data.percent)
   });
   window.electron.onConversionFinish((data) => {
-    console.log(11111, data);
-    
     const file = fileData.list.find(item => item.id === data.id)
     if (!file) return
     file.path = data.path
@@ -233,7 +344,7 @@ onMounted(() => {
     file.path = data.path
     file.percent = 100
   })
-  
+  init()
 });
 
 onBeforeUnmount(() => {
@@ -294,20 +405,14 @@ onBeforeUnmount(() => {
   .tool-bar {
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
+    justify-content: flex-start;
     background-color: #d5dcfa;
     height: 112px;
     margin-left: 2px;
     border-radius: 3px;
     padding: 2px;
-    .clear-tool:hover {
-      color: #ff6262;
-    }
-    .next-tool:hover {
-      color: rgb(116, 190, 255);
-    }
-    .pre-tool:hover {
-      color: rgb(116, 190, 255);
+    .tool-item {
+      margin-top: 10px;
     }
   }
   .formatSel {
@@ -340,7 +445,42 @@ li {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  max-width: 9em;
-  min-width: 3em;
+  min-width: 7em;
+  margin: auto 5px; 
+  font-size: 0.8em;
+  width: 100%;
+}
+.ant-tree-title {
+  font-size: 0.5em;
+}
+.doActive {
+  color: #f98008;
+}
+.maxStr {
+  white-space: nowrap;       /* 禁止换行 */
+  overflow: hidden;           /* 超出部分隐藏 */
+  text-overflow: ellipsis;    /* 显示省略号 */
+  max-width: 8em;           /* 设置最大宽度，可以根据需要调整 */
+}
+.deviceUl {
+  margin: 1px auto;
+  height: 100%;
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: 0px;  /* 隐藏垂直滚动条 */
+    height: 0px;  /* 隐藏水平滚动条 */
+  }
+  li {
+    border-radius: 3px;
+    padding: 0 4px;
+    &:hover {
+      background-color: #d3daf8;
+      cursor: default;
+    }
+  }
+}
+.selActive {
+  // color: #baedff;
+  background-color: #d3daf8;
 }
 </style>

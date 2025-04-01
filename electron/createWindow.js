@@ -1,19 +1,21 @@
 
 import { app, BrowserWindow, Menu, globalShortcut,Tray, screen } from 'electron'
 import path from 'path'
-import { __dirname, getConfig } from './common.js'
+import utils,{ __dirname, _rootPath, _assetsDir } from './common.js'
 import fs from 'fs'
 let tray
 let isHidden = false;
 let win
 const createWindow = () => {
   const {x,y} = getWindowBounds()
+  console.log(path.join(_rootPath,'resources', 'dist', 'no.ico'));
+  
   win = new BrowserWindow({
     x,
     y,
     width: 361,
     height: 96,
-    icon: path.join(__dirname, '../public/no.ico'),
+    icon: path.join(_assetsDir, 'no.ico'),
     alwaysOnTop: true,  // 确保窗口始终在最前面
     frame: false,
     backgroundColor: '#0000000',
@@ -36,7 +38,7 @@ const createWindow = () => {
     // win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
   
-  tray = new Tray(path.join(__dirname, '../dist/no.ico'));
+  tray = new Tray(path.join(_assetsDir, 'no.ico'));
   tray.setToolTip('note');
 
   // 设置托盘右键菜单
@@ -103,7 +105,7 @@ const createWindow = () => {
   });
   function getWindowBounds() {
     try {
-      const {config} = getConfig()
+      const {config} = utils.getConfig()
       const bounds = {x:config.now.placeX, y:config.now.placeY,width:config.now.width,height:config.now.height}
       const display = screen.getPrimaryDisplay();
       const { width, height } = display.workAreaSize;
@@ -118,7 +120,7 @@ const createWindow = () => {
   function saveWindowBounds() {
     if (win) {
       const bounds = win.getBounds();
-      const {config, configPath} = getConfig();
+      const {config, configPath} = utils.getConfig();
       config.now.placeX = bounds.x
       config.now.placeY = bounds.y
       config.now.width = bounds.width

@@ -24,6 +24,8 @@
     "mime": "^4.0.6",
     "mime-types": "^2.1.35",
     "music-metadata": "^11.0.0",
+    "node-record-lpcm16": "^1.0.1",
+    "record-audio": "^1.0.0",
     "rimraf": "^6.0.1",
     "sqlite3": "^5.1.7",
     "uuid": "^11.1.0",
@@ -43,19 +45,21 @@
   },
   "build": {
     "directories": {
-      "output": "app" 
+      "output": "app"
     },
     "appId": "com.example.myapp",
     "productName": "mytool",
     "files": [
       "**/*",
-      "!**/*.map"  
+      "!**/*.map"
     ],
     "extraResources": [
       {
-        "from": "assets/",
-        "to": "assets/",
-        "filter": ["**/*"]
+        "from": "electron/assets",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "./.env.product",
@@ -64,12 +68,16 @@
       {
         "from": "public",
         "to": "public",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "dist",
         "to": "dist",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "nsis": {

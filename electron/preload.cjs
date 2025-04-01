@@ -54,6 +54,8 @@ contextBridge.exposeInMainWorld('electron', {
   addPwd: (params) => ipcRenderer.invoke('addPwd', params),
   delPwd: (params) => ipcRenderer.invoke('delPwd', params),
   getPwdList: (params) => ipcRenderer.invoke('getPwdList', params),
+  toRecord: (params) => ipcRenderer.invoke('toRecord',params),
+  getAudioDevices: () => ipcRenderer.invoke('getAudioDevices'),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

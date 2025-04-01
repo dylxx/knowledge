@@ -16,9 +16,17 @@ const routes = [
   { path: '/tomatoClock', name:'tomatoClock', component: TomatoClock}
 ];
 
+const toolLine = [
+  '/videoTool',
+  '/soundEffects',
+  '/tomatoClock',
+  '/diary'
+]
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+  toolLine,
 });
 
 export default router;

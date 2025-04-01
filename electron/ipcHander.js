@@ -8,13 +8,13 @@ import { v4 as uuidv4 } from 'uuid'
 import {query, runDb, execSql} from './database.js'
 import ffmpeg from 'fluent-ffmpeg'
 import {getWindow} from './createWindow.js'
-import utils,{deleteFilesInDirectory, __dirname,getConfig, updateConfig } from './common.js'
+import utils,{__dirname, _rootPath, _tempDir, _userDataDir } from './common.js'
 import mime from 'mime-types'
 import {parseFile} from 'music-metadata'
-
-const rootPath = path.dirname(app.getPath('exe'));
-const tempDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'temp'): path.join(rootPath, 'temp')
-const userDataDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'userData'): path.join(rootPath, 'userData')
+import { createRequire } from "module";
+const require = createRequire(import.meta.url)
+const { spawn } = require('child_process')
+const recorder = require('node-record-lpcm16')
 const keyMap = {
   password: process.env.PWD_KEY
 }
@@ -27,7 +27,7 @@ function resizeWindow(event, size) {
 }
 
 const onSearch = async (event, filter) => {
-  const {config} = getConfig()
+  const {config} = utils.getConfig()
   const total =  await query('getNoteTotal', {})
   const startIndex = (filter.page - 1) * config.pageSize;
   const resultList =  await query('getNotePage', {$pagesize:config.pageSize,$offset: startIndex})
@@ -53,34 +53,20 @@ const getAllNote = async (event) => {
 }
 
 const saveNote = async (event, newNote) => {
-  newNote.createtime = getCurrentTime()
+  newNote.createtime = utils.getCurrentTime()
   const {title, content, createtime, uuid} = newNote
   await runDb('saveNote', toParams({title, content, createtime, uuid}))
   return newNote
 }
 
 const addNote = async (event, note) => {
-  note.createtime = getCurrentTime()
+  note.createtime = utils.getCurrentTime()
   note.uuid = uuidv4()
   const {uuid, title, createtime, content} = note
   await runDb('insertNote', toParams({uuid, title, createtime, content}))
   return note
 }
 
-function getCurrentTime() {
-  const now = new Date();
-
-  // 获取年、月、日、时、分、秒
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始，需要加 1
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-
-  // 拼接成目标格式
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
 
 const deleteNote = async (event, uuid) => {
   await runDb('deleteNoteByUUID', toParams({uuid}))
@@ -97,12 +83,12 @@ const deleteGroup = (event, uuid) => {
 
 const addGroup = (event, group) => {
   group.uuid = uuidv4()
-  group.createtime = getCurrentTime()
+  group.createtime = utils.getCurrentTime()
   const {uuid, name, createtime} = group
   runDb('insertGroup', toParams({uuid, name, createtime}))
 }
 const saveGroup = (event, newGroup) => {
-  runDb('saveGroup', {$name:newGroup.name, $createtime:getCurrentTime(), $uuid:newGroup.uuid})
+  runDb('saveGroup', {$name:newGroup.name, $createtime:utils.getCurrentTime(), $uuid:newGroup.uuid})
 }
 
 const groupTo = (event, params) => {
@@ -155,7 +141,7 @@ const mainSearchPwd = async (event, keywords) => {
 }
 
 const getConf = (event, params) => {
-  const {config} =  getConfig()
+  const {config} =  utils.getConfig()
   return config.now[params]
 }
 
@@ -173,7 +159,7 @@ const processFile = async (event, fileData, transFormat) => {
 const uploadFile = (event, fileData, dirType) => {
   const uuid = fileData.id || uuidv4()
   const name = fileData.fixName ? fileData.fixName : uuid
-  const dir = ({'temp': tempDir, 'userData': userDataDir})[dirType]
+  const dir = ({'temp': _tempDir, 'userData': _userDataDir})[dirType]
   const extension = fileData.name.substring(fileData.name.lastIndexOf('.'));
   // 确定固定名字
   const fullName = `${name}${extension}`
@@ -215,8 +201,8 @@ const convertToMp4 = async (inputFilePath, outputFilePath, backParams) => {
  * @param {*} backParams 通知附带参数
  */
 const convertMedia = async (inFilename, outFilename,format, backParams) => {
-  const inputFilePath = path.join(tempDir, inFilename)
-  const outputFilePath = path.join(tempDir, outFilename) + `.${format}`
+  const inputFilePath = path.join(_tempDir, inFilename)
+  const outputFilePath = path.join(_tempDir, outFilename) + `.${format}`
   const win = getWindow()
   ffmpeg(inputFilePath)
   .output(outputFilePath)
@@ -239,7 +225,7 @@ const convertMedia = async (inFilename, outFilename,format, backParams) => {
 
 const margeToMp4 = (event, fileData) => {
   const simpleName = fileData.name.substring(0,fileData.name.lastIndexOf('.'))
-  const outputPath = path.join(tempDir, `${simpleName}.mp4`); // 输出文件路径
+  const outputPath = path.join(_tempDir, `${simpleName}.mp4`); // 输出文件路径
   const win = getWindow()
 
   ffmpeg()
@@ -259,7 +245,7 @@ const margeToMp4 = (event, fileData) => {
 }
 
 const clearTempFile = () => {
-  deleteFilesInDirectory( tempDir)
+  utils.deleteFilesInDirectory( _tempDir)
 }
 
 const execCode = (event, code) => {
@@ -349,7 +335,7 @@ const readMusic = async (evnet, path) => {
 
 const copyFileToTemp = async (event, params) => {
   const extension = params.path.substring(params.path.lastIndexOf('.')) 
-  newPath = path.join(tempDir, params.id+extension)
+  newPath = path.join(_tempDir, params.id+extension)
   // 不存在才复制文件
   if (!fs.existsSync(newPath)) {
     fs.copyFileSync(params.path, newPath)
@@ -358,13 +344,13 @@ const copyFileToTemp = async (event, params) => {
 }
 
 const savePwd = async (event, params) => {
-  params.createtime = getCurrentTime()
+  params.createtime = utils.getCurrentTime()
   params.password = utils.encrypt(params.password, process.env.PWD_KEY)
   return await runDb('savePwd', toParams(params))
 }
 const addPwd = async (event, params) => {
   params.uuid = uuidv4()
-  params.createtime = getCurrentTime()
+  params.createtime = utils.getCurrentTime()
   const pwd = {...params}
   params.password = utils.encrypt(params.password, process.env.PWD_KEY)
   await runDb('addPwd', toParams(params))
@@ -377,10 +363,10 @@ const runSql = async (event, params) => {
 
 const updateConf = (event, params) => {
   
-  const {config} = getConfig()
+  const {config} = utils.getConfig()
   // config.now.tomatoMusic = 'E:\\project\\knowledge\\electron\\userData\\3660d75c-120b-4d28-976f-2f4346a14e89.mp3'
   config.now[params.name] = params.value
-  updateConfig(config)
+  utils.updateConfig(config)
 }
 
 const delPwd = async (event, params) => {
@@ -394,6 +380,109 @@ const getPwdList = async (evnet, params) => {
     item.password = utils.decrypt(item.password, process.env.PWD_KEY)
     return item
   })
+}
+
+let recordingProcess = null;
+let autoStopRecordTimer = null;
+const toRecord = async (event, params) => {
+  // return
+  // const outputFilePath = path.join(_tempDir, `${uuidv4()}.wav`)
+  // recordAudio(5, outputFilePath, '立体声混音 (Realtek High Definition Audio)')
+  switch (params.type.toLowerCase()) {
+      case 'start':
+        // 视频录制
+        if (recordingProcess) {
+          event.sender.send('recording-error', '已有录制正在进行');
+          return;
+        }
+        const uuid = uuidv4()
+        const name = utils.getCurrentTime('YYYY-MM-DD_HH-mm-ss') + '.wav'
+        const filePath = path.join(_tempDir, name)
+        recordingProcess = spawn('ffmpeg', [
+          '-f', 'dshow',
+          '-i', `audio=${params.device}`,
+          '-y', // 覆盖已有文件
+          // '-t', '5',
+          filePath // 输出文件
+        ]);
+      
+        recordingProcess.stderr.on('data', (data) => {
+          console.log(data.toString());
+          event.sender.send('ffmpeg-log', data.toString());
+        });
+      
+        recordingProcess.on('close', (code) => {
+          console.log('出错:::::', code);
+          
+          recordingProcess = null;
+          event.sender.send('recording-finished', code);
+        });
+        autoStopRecordTimer = setTimeout(() => {
+          if (recordingProcess) {
+            recordingProcess.kill('SIGINT'); // 优雅终止 FFmpeg
+            recordingProcess = null;
+          }
+          autoStopRecordTimer = null
+          // 发消息到渲染进程
+        }, 60*60*1000);
+        return {path: filePath, type:'audio/wav', id:uuid,name}
+        break;
+      case 'stop':
+        // 终止录音, 终止定时器
+        if (recordingProcess) {
+          recordingProcess.kill('SIGINT'); // 优雅终止 FFmpeg
+          recordingProcess = null;
+        }
+        if (autoStopRecordTimer) {
+          autoStopRecordTimer = null
+        }
+        return
+        break;
+      default:
+        console.error('无效的参数，请使用 "start" 或 "stop"');
+  }
+}
+
+const getAudioDevices = () => {
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn('ffmpeg', [
+      '-list_devices', 'true',
+      '-f', 'dshow',       // Windows 使用 DirectShow
+      '-i', 'dummy'        // 虚拟输入
+    ]);
+    let output = '';
+    // FFmpeg 的错误流（stderr）包含设备信息
+    ffmpeg.stderr.on('data', (data) => {
+      output += data.toString();
+    });
+    
+    ffmpeg.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`FFmpeg exited with code ${code}`));
+        return;
+      }
+      console.log(2222, output);
+      // 解析设备列表
+      const audioDevices = parseAudioDevices(output);
+      resolve(audioDevices);
+    });
+  });
+}
+
+// 解析 FFmpeg 输出，提取音频设备
+function parseAudioDevices(output) {
+  const lines = output.split('\n');
+  const audioDevices = [];
+
+  for (const line of lines) {
+    // 匹配音频设备（Windows dshow 格式）
+    const match = line.match(/"(.*? \(.*?\))" \(audio\)/);
+    if (match) {
+      audioDevices.push(match[1]); // 设备名称
+    }
+  }
+  console.log(1111, audioDevices);
+  return audioDevices;
 }
 
 function setupIpcHandlers() {
@@ -430,6 +519,8 @@ function setupIpcHandlers() {
   ipcMain.handle('addPwd',addPwd)
   ipcMain.handle('delPwd', delPwd)
   ipcMain.handle('getPwdList', getPwdList)
+  ipcMain.handle('toRecord', toRecord)
+  ipcMain.handle('getAudioDevices',getAudioDevices)
 }
 
 export {setupIpcHandlers}

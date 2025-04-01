@@ -1,9 +1,9 @@
 
-function getCurrentTime() {
+function getCurrentTime(format) {
   const now = new Date();
 
   // 获取年、月、日、时、分、秒
-  const year = now.getFullYear();
+  const year = now.getFullYear() + '';
   const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始，需要加 1
   const day = String(now.getDate()).padStart(2, '0');
   const hours = String(now.getHours()).padStart(2, '0');
@@ -11,7 +11,10 @@ function getCurrentTime() {
   const seconds = String(now.getSeconds()).padStart(2, '0');
 
   // 拼接成目标格式
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  if (!format) {
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+  return format.replace('YYYY', year).replace('YY',year.substring(2,4)).replace('MM',month).replace('DD',day).replace('HH',hours).replace('mm',minutes).replace('ss',seconds)
 }
 
 function toParams(obj) {

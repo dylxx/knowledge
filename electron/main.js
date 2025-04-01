@@ -3,7 +3,7 @@ import  { app, BrowserWindow, Menu, globalShortcut,Tray, ipcMain } from 'electro
 import log from "electron-log";
 import dotenv from "dotenv";
 import {setupIpcHandlers} from './ipcHander.js'
-import { deleteFilesInDirectory, __dirname } from './common.js'
+import utils,{ __dirname, _tempDir } from './common.js'
 import path from 'path'
 import {getWindow, createWindow} from './createWindow.js'
 import {init} from './init.js'
@@ -29,9 +29,8 @@ app.whenReady().then(() => {
 })
 
 ipcMain.handle('save-temp-file', async (event, filePath) => {
-  const tempDir = app.getPath('temp'); // 获取临时目录路径
   const fileName = path.basename(filePath);
-  const destPath = path.join(tempDir, fileName);
+  const destPath = path.join(_tempDir, fileName);
 
   return new Promise((resolve, reject) => {
     fs.copyFile(filePath, destPath, (err) => {
@@ -53,7 +52,7 @@ ipcMain.on('ondragstart', (event, filePath) => {
   })
 })
 
-deleteFilesInDirectory( path.join(__dirname, 'temp'))
+utils.deleteFilesInDirectory( _tempDir)
 init()
 
 app.on('window-all-closed', () => {

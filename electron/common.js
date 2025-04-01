@@ -7,10 +7,10 @@ import crypto from 'crypto';
 
 const configPath = path.join(app.getPath('userData'), 'userConfig.json');
 const __dirname =dirname(fileURLToPath(import.meta.url))
-const keyMap = {
-  password: process.env.PWD_KEY
-}
-
+const _rootPath = path.dirname(app.getPath('exe'));
+const _tempDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'temp'): path.join(_rootPath, 'temp')
+const _userDataDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'userData'): path.join(_rootPath, 'userData')
+const _assetsDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'assets'): path.join(_rootPath, 'resources', 'assets')
 function deleteFilesInDirectory(directory) {
   fs.readdir(directory, (err, files) => {
     if (err) {
@@ -85,14 +85,59 @@ function decrypt(encryptedText, key) {
   return decrypted;
 }
 
+function getCurrentTime(format) {
+  const now = new Date();
+
+  // 获取年、月、日、时、分、秒
+  const year = now.getFullYear() + '';
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始，需要加 1
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  // 拼接成目标格式
+  if (!format) {
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+  return format.replace('YYYY', year).replace('YY',year.substring(2,4)).replace('MM',month).replace('DD',day).replace('HH',hours).replace('mm',minutes).replace('ss',seconds)
+}
+
+function getFileSize(filePath) {
+  try {
+      // 确保路径存在
+      if (!fs.existsSync(filePath)) {
+          return '文件不存在';
+      }
+
+      // 获取文件大小（字节）
+      const fileSizeInBytes = fs.statSync(filePath).size;
+
+      // 计算单位换算
+      return formatSize(fileSizeInBytes);
+  } catch (error) {
+      return `获取文件大小失败: ${error.message}`;
+  }
+}
+
+// 格式化文件大小
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 const utils = {
   encrypt,
   decrypt,
   deleteFilesInDirectory,
   getConfig,
   getNestedValue,
-  updateConfig
+  updateConfig,
+  getCurrentTime,
+  getFileSize,
 }
 // 调用示例
-export {deleteFilesInDirectory, __dirname, getConfig, getNestedValue, updateConfig}
+export { __dirname, _rootPath, _tempDir, _userDataDir, _assetsDir}
 export default utils
