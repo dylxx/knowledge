@@ -1,6 +1,7 @@
 // ipcHandler.js
-import { ipcMain, BrowserWindow, app } from 'electron'
+import { ipcMain, BrowserWindow, app,desktopCapturer,screen } from 'electron'
 // 这样改回 require 方式
+let screenshotWin = null;
 
 import fs from 'fs'
 import path from 'path'
@@ -8,13 +9,15 @@ import { v4 as uuidv4 } from 'uuid'
 import {query, runDb, execSql} from './database.js'
 import ffmpeg from 'fluent-ffmpeg'
 import {getWindow} from './createWindow.js'
-import utils,{__dirname, _rootPath, _tempDir, _userDataDir } from './common.js'
+import utils,{__dirname, _rootPath, _tempDir, _userDataDir,_out } from './common.js'
 import mime from 'mime-types'
 import {parseFile} from 'music-metadata'
 import { createRequire } from "module";
+import screenshotWindow from "./screenshotWindow.js";
 const require = createRequire(import.meta.url)
 const { spawn } = require('child_process')
-const recorder = require('node-record-lpcm16')
+// const screenshot = require('screenshot-desktop');
+// const getPixels = require('get-pixels');
 const keyMap = {
   password: process.env.PWD_KEY
 }
@@ -22,7 +25,7 @@ function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
   if (win) {
     const rsize = win.getSize()
-    win.setSize(size[0]||rsize[0], size[1]||rsize[1], true)  
+    win.setSize(size[0]||rsize[0], size[1]||rsize[1], true)
   }
 }
 
@@ -159,7 +162,7 @@ const processFile = async (event, fileData, transFormat) => {
 const uploadFile = (event, fileData, dirType) => {
   const uuid = fileData.id || uuidv4()
   const name = fileData.fixName ? fileData.fixName : uuid
-  const dir = ({'temp': _tempDir, 'userData': _userDataDir})[dirType]
+  const dir = ({'temp': _tempDir, 'userData': _userDataDir, 'out':_out})[dirType]
   const extension = fileData.name.substring(fileData.name.lastIndexOf('.'));
   // 确定固定名字
   const fullName = `${name}${extension}`
@@ -202,7 +205,7 @@ const convertToMp4 = async (inputFilePath, outputFilePath, backParams) => {
  */
 const convertMedia = async (inFilename, outFilename,format, backParams) => {
   const inputFilePath = path.join(_tempDir, inFilename)
-  const outputFilePath = path.join(_tempDir, outFilename) + `.${format}`
+  const outputFilePath = path.join(_out, outFilename) + `.${format}`
   const win = getWindow()
   ffmpeg(inputFilePath)
   .output(outputFilePath)
@@ -225,7 +228,7 @@ const convertMedia = async (inFilename, outFilename,format, backParams) => {
 
 const margeToMp4 = (event, fileData) => {
   const simpleName = fileData.name.substring(0,fileData.name.lastIndexOf('.'))
-  const outputPath = path.join(_tempDir, `${simpleName}.mp4`); // 输出文件路径
+  const outputPath = path.join(_out, `${simpleName}.mp4`); // 输出文件路径
   const win = getWindow()
 
   ffmpeg()
@@ -246,6 +249,7 @@ const margeToMp4 = (event, fileData) => {
 
 const clearTempFile = () => {
   utils.deleteFilesInDirectory( _tempDir)
+  utils.deleteFilesInDirectory( _out)
 }
 
 const execCode = (event, code) => {
@@ -397,7 +401,7 @@ const toRecord = async (event, params) => {
         }
         const uuid = uuidv4()
         const name = utils.getCurrentTime('YYYY-MM-DD_HH-mm-ss') + '.wav'
-        const filePath = path.join(_tempDir, name)
+        const filePath = path.join(_out, name)
         recordingProcess = spawn('ffmpeg', [
           '-f', 'dshow',
           '-i', `audio=${params.device}`,
@@ -485,6 +489,17 @@ function parseAudioDevices(output) {
   return audioDevices;
 }
 
+const createShotWindow = ($event, params) => {
+  console.log(222, params.win);
+  
+  if (params.win === 'create') {
+    screenshotWindow.createScreenshotWindow()
+  } else if (params.win === 'close') {
+    console.log(1111);
+    screenshotWindow.closeScreenshotWindow()
+  }
+}
+
 function setupIpcHandlers() {
   ipcMain.handle('resize-window', resizeWindow)
   ipcMain.handle('getUngroupNote',  getUngroupNote)
@@ -521,6 +536,7 @@ function setupIpcHandlers() {
   ipcMain.handle('getPwdList', getPwdList)
   ipcMain.handle('toRecord', toRecord)
   ipcMain.handle('getAudioDevices',getAudioDevices)
+  ipcMain.handle('createShotWindow',createShotWindow)
 }
 
 export {setupIpcHandlers}

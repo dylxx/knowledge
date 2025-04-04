@@ -9,12 +9,12 @@ const configPath = path.join(app.getPath('userData'), 'userConfig.json');
 const __dirname =dirname(fileURLToPath(import.meta.url))
 const _rootPath = path.dirname(app.getPath('exe'));
 const _tempDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'temp'): path.join(_rootPath, 'temp')
+const _out = path.join(_tempDir, 'out')
 const _userDataDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'userData'): path.join(_rootPath, 'userData')
 const _assetsDir = process.env.NODE_ENV==='development'? path.join(__dirname, 'assets'): path.join(_rootPath, 'resources', 'assets')
-function deleteFilesInDirectory(directory) {
+function deleteFilesInDirectory(directory, delDir) {
   fs.readdir(directory, (err, files) => {
     if (err) {
-      
       console.error('读取目录失败:', err);
       return;
     }
@@ -33,10 +33,13 @@ function deleteFilesInDirectory(directory) {
             else console.log('已删除文件:', filePath);
           });
         } else if (stats.isDirectory()) {
-          fs.rm(filePath, { recursive: true, force: true }, err => {
-            if (err) console.error('删除文件夹失败:', err);
-            else console.log('已删除文件夹:', filePath);
-          });
+          // 删除目录
+          if (delDir) {
+            fs.rm(filePath, { recursive: true, force: true }, err => {
+              if (err) console.error('删除文件夹失败:', err);
+              else console.log('已删除文件夹:', filePath);
+            });
+          }
         }
       });
     });
@@ -139,5 +142,5 @@ const utils = {
   getFileSize,
 }
 // 调用示例
-export { __dirname, _rootPath, _tempDir, _userDataDir, _assetsDir}
+export { __dirname, _rootPath, _tempDir, _userDataDir, _assetsDir,_out}
 export default utils

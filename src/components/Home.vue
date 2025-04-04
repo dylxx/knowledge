@@ -3,12 +3,12 @@
     <div class="moveBar"></div>
     <div class="input-search">
       <a-button @click="gotoManage" size="small"><SettingOutlined /></a-button>
-      <a-input class="main-input" ref="mainInput" size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copySel">
+      <a-input class="main-input" ref="mainInput" size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copySel" allowClear>
       </a-input>
       <a-button @click="changeTool" size="small"><RightOutlined /></a-button>
     </div>
     <div style="display: flex;justify-content: space-evenly;" v-if="!dataList.list.length">
-      <SettingOutlined  class="hoverActive" @click="goto('manage')"/>
+      <BgColorsOutlined class="hoverActive" @click="absorbColor()" />
       <VideoCameraOutlined class="hoverActive" @click="goto('videoTool')" />
       <SoundOutlined  class="hoverActive" @click="goto('soundEffects')"/>
       <ScheduleOutlined  class="hoverActive" @click="goto('tomatoClock')"/>
@@ -30,7 +30,7 @@
   <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
-import { SettingOutlined,RightOutlined,VideoCameraOutlined,SoundOutlined,ScheduleOutlined } from '@ant-design/icons-vue'
+import { SettingOutlined,RightOutlined,VideoCameraOutlined,SoundOutlined,ScheduleOutlined,BgColorsOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 
@@ -50,6 +50,9 @@ const changeSel = (index) => {
 }
 const goto = (uri) => {
   router.push(uri)
+}
+const absorbColor = () => {
+  window.electron.createShotWindow({win:'create'})
 }
 const handleKeyDown = (event) => {
   if (event.key === 'ArrowUp') {

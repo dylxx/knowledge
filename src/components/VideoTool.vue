@@ -13,7 +13,6 @@
           <span style="font-size: 0.8em">拖拽上传</span>
           <span style="font-size: 0.8em">转{{ transFormat }}</span>
         </div>
-
       </div>
       <div v-if="tool.curr === 1" class="transMp4-drop" @dragover.prevent @drop="dropFileMerge($event)">
         <UploadOutlined style="font-size: 28px" />
@@ -67,6 +66,7 @@
                     :class="{selActive:deviceTooltip.selected === item}" 
                     class="maxStr" v-for="(item, index) in deviceList" 
                     @click="deviceTooltip.selected = item;deviceTooltip.formatVisible=false" 
+                    :title="item"
                     :key="index">{{ item }}
                   </li>
                 </ul>
@@ -190,7 +190,7 @@ const copyPhotoFromPlate = async () => {
           type,
           fixName: timestamp,
           content: arrayBuffer
-        }, 'temp')
+        }, 'out')
         const file = fileData.list.find(item => item.id === result.id)
         file.path = result.path
         file.percent = 100

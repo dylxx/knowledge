@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { app } from 'electron'
-import utils,{ __dirname,_userDataDir, _tempDir } from "./common.js";
+import utils,{ __dirname,_userDataDir, _tempDir,_out } from "./common.js";
 
 // 获取安装位置的路径
 const _rootPath = path.dirname(app.getPath('exe'));
@@ -17,6 +17,9 @@ const init = () => {
   // 确保路径可写
   if (!fs.existsSync(_tempDir)) {
     fs.mkdirSync(_tempDir, { recursive: true });
+  }
+  if (!fs.existsSync(_out)) {
+    fs.mkdirSync(_out, { recursive: true });
   }
   if (!fs.existsSync(_userDataDir)) {
     fs.mkdirSync(_userDataDir, { recursive: true });
