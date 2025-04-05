@@ -112,7 +112,7 @@ const dropFileTrans = async (event) => {
       size: file.size,
       content: fileContent
     }, 'userData');
-    const data = await window.electron.readMusic(newFile.path)
+    const data = await window.electron.readFile(newFile.path)
     const blob = new Blob([data], {type:file.type})
     audioSrc.value = URL.createObjectURL(blob)
     window.electron.updateConfig({name: 'tomatoMusic', value: newFile.path})
@@ -257,7 +257,7 @@ const initMusic = async () => {
   
   if (!mSrc) return
   const extend = mSrc.substring(mSrc.lastIndexOf('.'))
-  const data = await window.electron.readMusic(mSrc)
+  const data = await window.electron.readFile(mSrc)
   if(!data) {
     window.electron.updateConfig({name:'tomatoMusic', value:''})
     return

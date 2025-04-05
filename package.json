@@ -27,6 +27,7 @@
     "node-record-lpcm16": "^1.0.1",
     "record-audio": "^1.0.0",
     "rimraf": "^6.0.1",
+    "screenshot-desktop": "^1.15.1",
     "sqlite3": "^5.1.7",
     "uuid": "^11.1.0",
     "vue": "^3.5.13",

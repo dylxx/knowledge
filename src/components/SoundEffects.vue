@@ -127,7 +127,7 @@ const audioTimeupdate = (music:musicItemI, index:number) => {
 }
 const selectMusic = async (music:musicItemI, index:number) => {
   hoverMusic.value = music
-  const data = await window.electron.readMusic(music.path)
+  const data = await window.electron.readFile(music.path)
   const blob = new Blob([data], {type:'audio/wav'})
   const url = URL.createObjectURL(blob)
   if (!audioDom.value[index]) return
@@ -173,7 +173,7 @@ const selecteddir = async (dir:dirItemI) => {
 
 // 波形 单独提出来异步节省时间
 const drawWave = async (path:string, index:number, fileType) => {
-  const data = await window.electron.readMusic(path)
+  const data = await window.electron.readFile(path)
   const blob = new Blob([data], {type:fileType})
   const url = URL.createObjectURL(blob)
   waveSurfer = WaveSurfer.create({

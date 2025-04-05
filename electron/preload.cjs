@@ -46,7 +46,7 @@ contextBridge.exposeInMainWorld('electron', {
   getMusicDirList: (dirPath) => {
     return ipcRenderer.invoke('getMusicDirList', dirPath)
   },
-  readMusic: (path) => ipcRenderer.invoke('readMusic', path),
+  readFile: (path) => ipcRenderer.invoke('readFile', path),
   copyFileToTemp: (params) => ipcRenderer.invoke('copyFileToTemp', params),
   runSql: (params) => ipcRenderer.invoke('runSql', params),
   updateConfig: (params) => ipcRenderer.invoke('updateConfig', params),

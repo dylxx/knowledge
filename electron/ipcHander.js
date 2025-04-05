@@ -328,13 +328,21 @@ function isAudioFile(filename) {
   return audioExtensions.includes(ext);
 }
 
-const readMusic = async (evnet, path) => {
+const readFile = async (evnet, path) => {
   try {
     const result = await fs.promises.readFile(path)
+    console.log('success');
     return result
   } catch (error) {
+    console.error(error);
     return null
   }
+}
+
+const getShotPhoto = async ($event, params) => {
+  const filePath = params && params.filePath || path.join(_tempDir, 'test.png')
+  console.log(111, filePath);
+  return await readFile(null, filePath)
 }
 
 const copyFileToTemp = async (event, params) => {
@@ -500,6 +508,8 @@ const createShotWindow = ($event, params) => {
   }
 }
 
+
+
 function setupIpcHandlers() {
   ipcMain.handle('resize-window', resizeWindow)
   ipcMain.handle('getUngroupNote',  getUngroupNote)
@@ -526,7 +536,7 @@ function setupIpcHandlers() {
   ipcMain.handle('uploadFile', uploadFile)
   ipcMain.handle('execCode', execCode)
   ipcMain.handle('getMusicDirList', getMusicDirList)
-  ipcMain.handle('readMusic', readMusic)
+  ipcMain.handle('readFile', readFile)
   ipcMain.handle('copyFileToTemp',copyFileToTemp)
   ipcMain.handle('runSql',runSql)
   ipcMain.handle('updateConfig',updateConf)
@@ -537,6 +547,7 @@ function setupIpcHandlers() {
   ipcMain.handle('toRecord', toRecord)
   ipcMain.handle('getAudioDevices',getAudioDevices)
   ipcMain.handle('createShotWindow',createShotWindow)
+  ipcMain.handle('getShotPhoto', getShotPhoto)
 }
 
 export {setupIpcHandlers}

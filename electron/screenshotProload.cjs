@@ -10,7 +10,8 @@ contextBridge.exposeInMainWorld('electron', {
   send: (channel, data) => ipcRenderer.send(channel, data),
   off: (channel, listener) => ipcRenderer.removeListener(channel, listener),
   receive: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
-  createShotWindow: (params) => ipcRenderer.invoke('createShotWindow', params)
+  createShotWindow: (params) => ipcRenderer.invoke('createShotWindow', params),
+  getShotPhoto: (params) => ipcRenderer.invoke('getShotPhoto', params)
 });
 
 window.addEventListener('DOMContentLoaded', () => {
