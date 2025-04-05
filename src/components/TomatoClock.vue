@@ -1,14 +1,12 @@
 <template style="height: 200px">
-  <div class="moveBar" ></div>
-  <div style="display: flex; justify-content: space-evenly">
-    <LeftOutlined class="hoverActive" @click="gotoPre" />
-    <RollbackOutlined class="hoverActive" @click="backHome"/>
-    <RightOutlined class="hoverActive" @click="gotoNext"/>
+  <div class="drag" style="display: flex; justify-content: space-evenly;margin-top: 8px">
+    <LeftOutlined class="hoverActive noDrag" @click="gotoPre" />
+    <RollbackOutlined class="hoverActive noDrag" @click="backHome"/>
+    <RightOutlined class="hoverActive noDrag" @click="gotoNext"/>
   </div>
   <div class="main-content">
     <div class="main-left ">
       <a-list class="typeList-main scoll" size="small" bordered :data-source="typeList" :split="false" style="border: none" :locale="{emptyText: ' '}">
-
           <template #renderItem="{ item, index }">
               <div class="type-list-item" >
                 <a-list-item  class="typeList-item itemHover "  @click="addTimeSlice(item)">
@@ -16,20 +14,16 @@
                     <div :title="item.name" class="itemList-title">{{ item.name }}</div>
                   </div>
                 </a-list-item>
-              <div style="display: flex;flex-direction: column; width: auto">
-                <div style="display: flex;flex-direction: row">
-                  <a-button size="small" style="margin: 2px 1px" @click="timeDown(item)" @mousedown="startPress(item, 0)" @mouseup="stopPress" @mouseleave="stopPress"><LeftOutlined/></a-button>
-                  <a-button size="small" style="width: auto;min-width:31px;margin:2px 0;" >{{ item.minute }}</a-button>
-                  <a-button size="small" style="margin: 2px 1px 1px 2px" @click="timeUp(item)" @mousedown="startPress(item, 1)" @mouseup="stopPress" @mouseleave="stopPress"><RightOutlined/></a-button>
-                  <a-button size="small" style="margin: 2px 3px 1px 1px" @click="delTomato(item, index)"><CloseOutlined /></a-button>
+                <div class="editBtn">
+                  <a-button class="timeBtn" @wheel="fixTime($event, item)" size="small" >{{ item.minute }}</a-button>
+                  <a-button size="small" class="delTomatoBtn" @click="delTomato(item, index)"><CloseOutlined /></a-button>
                 </div>
-              </div>
             </div>
           </template>
         </a-list>
         <div class="addType-space" style="display: flex">
             <a-input class="add-name" placeholder="名称" size="small" v-model:value="addTypes.name" ></a-input>
-            <a-input size="small" style="width: 40px;height: 24px;" v-model:value="addTypes.minute"></a-input>
+            <a-input size="small" style="width: 40px;height: 24px;" v-model:value="addTypes.minute" @wheel="fixTime($event, addTypes)"></a-input>
             <a-button size="small" @click="toAddTypes"><PlusOutlined /></a-button>
         </div>
     </div>
@@ -42,12 +36,10 @@
                   <div class="itemList-title">{{ item.name }}</div>
                 </div>
               </a-list-item>
-              <div style="display: flex;flex-direction: column; width: auto">
                 <div style="display: flex;flex-direction: row">
-                  <a-button size="small" style="width: auto;margin:2px 0;min-width: 50px" >{{ item.curr }}</a-button>
+                  <a-button class="timeBtnRight" size="small" >{{ item.curr }}</a-button>
                   <a-button size="small" style="margin: 2px 3px 1px 2px"><CloseOutlined @click="closeSlice(item,index)"/></a-button>
                 </div>
-              </div>
             </div>
           </template>
         </a-list>
@@ -66,7 +58,8 @@
 <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 // import { settingFilled, StarFilled, StarTwoTone } from 'ant-design/icons-vue';
-import { CloseOutlined,PlusOutlined,AlertOutlined,PlayCircleOutlined,RollbackOutlined,LeftOutlined,RightOutlined,PauseOutlined } from '@ant-design/icons-vue'
+import { CloseOutlined,PlusOutlined,AlertOutlined,PlayCircleOutlined,RollbackOutlined,
+  LeftOutlined,RightOutlined,PauseOutlined,UpOutlined,DownOutlined,CloseCircleOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
@@ -266,12 +259,20 @@ const initMusic = async () => {
   audioSrc.value = URL.createObjectURL(blob)
 }
 
+const fixTime = (event, item) => {
+  event.preventDefault()
+  if (event.deltaY > 0 && item.minute > 0) {
+    item.minute--
+  } else if (event.deltaY < 0) {
+    item.minute++
+  }
+}
 onBeforeUnmount(() => {
 });
 
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(() => {
-  window.electron.resizeWindow([478,250])
+  window.electron.resizeWindow([375,240])
   getTomatoList()
   initMusic()
 })
@@ -282,8 +283,7 @@ onMounted(() => {
 .main-content {
   display: flex;
   flex-direction: row;
-  margin: 3px;
-  width: 97%;
+  margin: 3px 8px;
   height: 200px;
   padding: 3px;
   border-radius: 3px;
@@ -292,7 +292,7 @@ onMounted(() => {
     width: 53%;
     border-radius: 3px;
     margin-right: 10px;
-    min-width: 205px;
+    min-width: 170px;
     background-color: rgb(129, 196, 255);
     .typeList-main {
       height: 86%;
@@ -368,6 +368,42 @@ onMounted(() => {
       border: none;
     }
   }
+}
+.upDownTime {
+  margin: auto 3px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  font-size: 12px;
+}
+.borderItem {
+  border: solid 1px #e6e6e6;
+}
+.editBtn {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  .timeBtn {
+    width: auto;
+    max-width: 60px;
+    min-width:31px;
+    margin:auto 0;
+    background-color: #fff1de;
+    border: none;
+  }
+  .delTomatoBtn {
+    margin: auto 5px;
+  }
+}
+
+.timeBtnRight {
+  width: auto;
+  max-width: 60px;
+  min-width:31px;
+  margin:auto 0;
+  background-color: #fff1de;
+  border: none;
 }
 
 // 动画

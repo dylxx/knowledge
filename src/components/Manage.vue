@@ -428,6 +428,7 @@ const deleteNote = async (note) => {
 
 
 const onDragOver = (event) => {
+  console.log(event.preventDefault);
   event.preventDefault() // 必须阻止默认行为，否则drop事件不会触发
 }
 

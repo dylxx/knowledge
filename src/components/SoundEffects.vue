@@ -1,9 +1,8 @@
 <template  style="height: 260px">
-  <div class="moveBar" ></div>
-  <div style="display: flex; justify-content: space-evenly">
-    <LeftOutlined class="hoverActive" @click="gotoPre" />
-    <RollbackOutlined class="hoverActive" @click="backHome"/>
-    <RightOutlined class="hoverActive" @click="gotoNext"/>
+  <div class="drag" style="display: flex; justify-content: space-evenly;margin-top: 8px">
+    <LeftOutlined class="hoverActive noDrag" @click="gotoPre" />
+    <RollbackOutlined class="hoverActive noDrag" @click="backHome"/>
+    <RightOutlined class="hoverActive noDrag" @click="gotoNext"/>
   </div>
   <div class="dir-setting">
     <span>文件目录:  </span>
@@ -13,9 +12,9 @@
   <div class="main-content">
     <div style="width: 25%;height: 100%">
       <a-list class="file-list" size="small" bordered :data-source="fileTree" :split="false" style="border: none" :locale="{emptyText: '列表'}">
-        <template #renderItem="{ item }">
-          <div :class="{'dir-list-item':true, 'selected':activeDir.id === item.id}" @click="selecteddir(item)" >
-            <a-list-item  class="dirList-item">
+        <template #renderItem="{ item }" >
+          <div class="dir-list-item" :class="{'selected':activeDir.id === item.id}" @click="selecteddir(item)" @dragover="onDragOver($event)" @drop="dropMusic($event, item)" >
+            <a-list-item  class="dirList-item" >
               <div style="margin: 0 5px"></div>
               <div style="display: flex; flex-direction: row;justify-content: center">
                 <div class="itemList-title"><span>{{ item.name }}</span></div>
@@ -27,7 +26,7 @@
             </span>
           </div>
           <div v-for="(cdir, cindex) in item.children" :key="cindex">
-            <div :class="{'dir-list-item':true, 'selected':activeDir.id === cdir.id}" @click="selecteddir(cdir)"  v-if="childIsDir(item) && item.activeChild"  >
+            <div class="dir-list-item" :class="{'selected':activeDir.id === cdir.id}" @click="selecteddir(cdir)"  v-if="childIsDir(item) && item.activeChild"  >
               <div style="display: flex; flex-direction: row;justify-content: center">
                 <div class="itemList-title"><span>{{ cdir.name }}</span></div>
               </div>
@@ -49,6 +48,7 @@
             <div style="display: flex; justify-content: space-evenly">
               <a-progress style="margin: auto 1px;" :percent="music.percent" size="small" :show-info="false" :stroke-color="['#9098ff', '#52c41a', '#f5222d']" />
               <span style="font-size: 0.8em; margin: auto 0;">{{ music.duration + 's' }}</span> 
+              <CloseCircleOutlined @click="delMusic(music)" class="hoverActive" style="font-size: 10px;margin: auto 3px"/>
             </div>
           </a-col>
         </a-row>
@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 // import { settingFilled, StarFilled, StarTwoTone } from 'ant-design/icons-vue';
-import { LinkOutlined,AppstoreOutlined,UpOutlined,DownOutlined,DeleteOutlined,DownloadOutlined,UploadOutlined,RollbackOutlined,LeftOutlined,RightOutlined } from '@ant-design/icons-vue'
+import { LinkOutlined,AppstoreOutlined,UpOutlined,DownOutlined,DeleteOutlined,DownloadOutlined,UploadOutlined,RollbackOutlined,LeftOutlined,RightOutlined,CloseCircleOutlined } from '@ant-design/icons-vue'
 import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
 import WaveSurfer from 'wavesurfer.js';
@@ -88,6 +88,7 @@ interface musicItemI {
 
 // 数据
 const router = useRouter();
+let dragFilePath = ''
 let rootDir = ref<string>('E:\\music\\音效')
 let fileTree = ref<dirItemI[]>([])
 let activeDir = ref<dirItemI>({
@@ -116,9 +117,26 @@ const gotoNext = ():void => {
 const gotoPre = ():void => {
   router.push('/videoTool')
 }
+const onDragOver = ($event):void => {
+  console.log(222221112, $event.preventDefault);
+  $event.preventDefault() // 必须阻止默认行为，否则drop事件不会触发
+}
+const dropMusic = async (event, item:dirItemI):Promise<void> => {
+  if (item.name !== '收藏') return
+  const dirPath = item.path
+  console.log(111, dragFilePath);
+  await window.electron.copyFile({dirPath, filePath:dragFilePath})
+  getMusicDirList()
+  dragFilePath = null
+}
 
 const activeChild = (dir) => {
   dir.activeChild = !dir.activeChild
+}
+
+const delMusic = (music:musicItemI):void => {
+  window.electron.delFile({filePath:music.path})
+  getMusicDirList()
 }
 
 const audioTimeupdate = (music:musicItemI, index:number) => {
@@ -145,9 +163,9 @@ const pauseMusic = (music:musicItemI, index:number):void => {
 
 
 const getMusicDirList = async () => {
-  console.log('rootDir.value', rootDir.value);
   const files = await window.electron.getMusicDirList(rootDir.value)
-  
+  // files.children.sort((a,b) => b.name-a.name)
+  files.children.sort((a,b) => b.name.includes('收藏')-a.name.includes('收藏'))
   fileTree.value = files.children
   if (files.children.length > 0) {
     selecteddir(files.children[0])
@@ -190,17 +208,19 @@ const drawWave = async (path:string, index:number, fileType) => {
 }
 
 const onDragStartFile = (event, file:musicItemI) => {
-  event.preventDefault()
   if(!file.path) {
     message.error('请稍等...')
     return
   }
+  console.log(2222, file.path);
+  dragFilePath = file.path
+  event.dataTransfer.setData('filePath', file.path)
   window.electron.startDrag(file.path)
   // event.dataTransfer.setData('fileId', file.id)
 }
 
 const childIsDir = (dir) => {
-  if (dir.children && dir.children[0].type === 'directory') {
+  if (dir.children && dir.children.length > 0 && dir.children[0].type === 'directory') {
     return true
   }
   return false
@@ -212,7 +232,7 @@ onBeforeUnmount(() => {
 
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(() => {
-  window.electron.resizeWindow([400, 290])
+  window.electron.resizeWindow([400, 270])
   getMusicDirList()
 })
 
@@ -233,7 +253,7 @@ onMounted(() => {
 .main-content {
   display: flex;
   flex-direction: row;
-  margin: 10px 0;
+  margin: 10px 8px;
   height: 205px;
   .file-list {
     padding: 0 4px;
@@ -252,7 +272,8 @@ onMounted(() => {
       display: flex;
       justify-content: center;
       overflow: auto;
-      border-radius: 2px;
+      border-radius: 4px;
+      background-color: rgb(255, 244, 233);
       &:hover {
         background-color: #faebd7;
       }

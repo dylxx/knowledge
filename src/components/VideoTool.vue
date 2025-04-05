@@ -1,9 +1,8 @@
 <template  style="height: 200px">
-  <div class="moveBar" ></div>
-  <div style="display: flex; justify-content: space-evenly">
-    <LeftOutlined class="hoverActive" @click="gotoPre" />
-    <RollbackOutlined class="hoverActive" @click="backHome"/>
-    <RightOutlined class="hoverActive" @click="gotoDiary"/>
+  <div class="topBar drag" style="display: flex; justify-content: space-evenly">
+    <LeftOutlined class="hoverActive noDrag" @click="gotoPre" />
+    <RollbackOutlined class="hoverActive noDrag" @click="backHome"/>
+    <RightOutlined class="hoverActive noDrag" @click="gotoDiary"/>
   </div>
   <div class="main-content">
     <div class="transMp4-main">
@@ -357,11 +356,8 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped  lang="less">
-.moveBar {
-  margin-bottom: 2px;
-  height: 10px;
-  background-color: aliceblue;
-  -webkit-app-region: drag;
+.topBar {
+  margin: 8px;
 }
 .transMp4-main {
   width: auto;
@@ -482,5 +478,8 @@ li {
 .selActive {
   // color: #baedff;
   background-color: #d3daf8;
+}
+.main-content {
+  margin: 8px;
 }
 </style>

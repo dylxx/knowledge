@@ -331,7 +331,6 @@ function isAudioFile(filename) {
 const readFile = async (evnet, path) => {
   try {
     const result = await fs.promises.readFile(path)
-    console.log('success');
     return result
   } catch (error) {
     console.error(error);
@@ -340,7 +339,7 @@ const readFile = async (evnet, path) => {
 }
 
 const getShotPhoto = async ($event, params) => {
-  const filePath = params && params.filePath || path.join(_tempDir, 'test.png')
+  const filePath = params && params.filePath || path.join(_tempDir, 'screenshot.png')
   console.log(111, filePath);
   return await readFile(null, filePath)
 }
@@ -508,6 +507,25 @@ const createShotWindow = ($event, params) => {
   }
 }
 
+const copyFile = ($event, params) => {
+  try {
+    // 确保目标目录存在
+    fs.mkdirSync(params.dirPath, { recursive: true });
+    // 获取文件名
+    const fileName = path.basename(params.filePath);
+    const targetPath = path.join(params.dirPath, fileName);
+    // 复制文件
+    console.log(111, params, targetPath);
+    
+    fs.copyFileSync(params.filePath, targetPath);
+    return targetPath;
+  } catch (error) {
+      throw new Error(`复制文件失败: ${error.message}`);
+  }
+}
+const delFile = ($event, params) => {
+  fs.unlinkSync(params.filePath)
+}
 
 
 function setupIpcHandlers() {
@@ -548,6 +566,8 @@ function setupIpcHandlers() {
   ipcMain.handle('getAudioDevices',getAudioDevices)
   ipcMain.handle('createShotWindow',createShotWindow)
   ipcMain.handle('getShotPhoto', getShotPhoto)
+  ipcMain.handle('copyFile',copyFile)
+  ipcMain.handle('delFile',delFile)
 }
 
 export {setupIpcHandlers}

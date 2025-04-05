@@ -57,6 +57,8 @@ contextBridge.exposeInMainWorld('electron', {
   toRecord: (params) => ipcRenderer.invoke('toRecord',params),
   getAudioDevices: () => ipcRenderer.invoke('getAudioDevices'),
   createShotWindow: (params) => ipcRenderer.invoke('createShotWindow', params),
+  copyFile: (params) => ipcRenderer.invoke('copyFile', params),
+  delFile: (params) => ipcRenderer.invoke('delFile', params)
 });
 
 window.addEventListener('DOMContentLoaded', () => {

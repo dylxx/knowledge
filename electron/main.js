@@ -48,7 +48,7 @@ ipcMain.on('ondragstart', (event, filePath) => {
   
   event.sender.startDrag({
     file: filePath,
-    icon: path.join(__dirname, 'assets/eye.png')
+    icon: path.join(__dirname, 'assets/pop.png')
   })
 })
 

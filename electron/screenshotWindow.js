@@ -46,7 +46,7 @@ export async function createScreenshotWindow() {
   }
   setupScreenshotIpcHandlers()
   // 可选：打开 DevTools
-  screenshotWin.webContents.openDevTools();
+  // screenshotWin.webContents.openDevTools();
   // globalShortcut.register('Control+Shift+I', () => {
   //   win.webContents.openDevTools();
   // });
@@ -65,7 +65,7 @@ const captureFullScreen = async () => {
     });
     
     // img 是 Buffer，可以直接保存
-    const filePath = path.join(_tempDir, 'test.png')
+    const filePath = path.join(_tempDir, 'screenshot.png')
     fs.writeFileSync(filePath, img);
     return {filePath, img};
   } catch (error) {

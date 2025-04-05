@@ -3,7 +3,8 @@
     <canvas
       ref="canvas"
       @mousemove="onMouseMove"
-      @click="closeWin"
+      @contextmenu.prevent="copyColor('hex')"
+      @click="copyColor('rgb')"
       style="width: 100%;height: 100%"
     />
     <div
@@ -14,7 +15,7 @@
         ref="pixelCanvas"
         style="width: 10px;height: 10px"
       ></canvas> -->
-      <div class="grid-container">
+      <!-- <div class="grid-container">
         <div 
           v-for="(item, index) in gridItems" 
           :key="index"
@@ -22,10 +23,21 @@
           :class="{'center-cell': index === pixArea.center-1}"
           :style="{ backgroundColor: item.color }"
         ></div>
-      </div>
-      <div>{{ pixelInfo.info }}</div>
+      </div> -->
+      <canvas
+        ref="miniCanvas"
+        style="width: 100px;height: 70px"
+        :width="300"
+        :height="200"
+      >
+      </canvas>
       <div>{{ pixelInfo.rgb }}</div>
-      <div>{{ pixelInfo.hex }}</div>
+      <div style="display: flex;justify-content: center">
+        <div style="width: 12px;height: 12px;margin: auto 5px" :style="`background-color:${pixelInfo.hex}`"></div>
+        <span>{{ pixelInfo.hex }}</span>
+      </div>
+      <div>左键复制rgb</div>
+      <div>右键复制hex</div>
     </div>
   </div>
 </template>
@@ -37,29 +49,31 @@ import "../style/main.less";
 
 // 数据
 const pixArea = {
-  total: 81,
-  side: 9,
-  half: 4,
-  center: 41
+  total: 31*17,
+  widthside: 31,
+  heightside: 17,
+  widthHalf: 15,
+  heigthHalf: 9,
+  center: 264
 }
 const route = useRoute();
 const canvas = ref(null);
-// const imageUrl = encodeURI('../public/test.png')
+const miniCanvas = ref(null)
 const gridItems = ref(
   Array(pixArea.total).fill().map(() => ({
     color: '#333' // 默认颜色
   }))
 );
-const infoPos = ref({ top: 0, left: 0 });
+const infoPos = ref({ top: 0, left: 0, space: 20});
 const pixelInfo = reactive({
-  rgb: '',
+  rgb: 'rgb(0,0,0)',
   hex:  '#000000',
-  info: '',
   x:0,
   y:0
 });
 
 let ctx = null;
+let miniCtx = null
 
 const BOX_WIDTH = 100;
 const BOX_HEIGHT = 50;
@@ -114,19 +128,27 @@ const onMouseMove = (e) => {
   const rect = canvas.value.getBoundingClientRect();
   const x = Math.floor((e.clientX - rect.left)/window.screen.width*canvas.value.width);
   const y = Math.floor((e.clientY - rect.top)/window.screen.height*canvas.value.height);
-  console.log(11111,x);
   // 获取像素数据
+  setInfoPos(x,y, e.clientX, e.clientY)
+  // infoPos.value = { top: e.clientY + 20, left: e.clientX + 20 };
   const data = ctx.getImageData(x, y, 1, 1).data;
-  setMiniColor(x,y)
-  console.log('data数据::::', data);
-  
+  setMiniColor2(x,y)
   const [r, g, b, a] = data;
-  pixelInfo.info = `R:${r} G:${g} B:${b} A:${a}`;
-  pixelInfo.rgb = `(${r},${g},${b})`
+  pixelInfo.rgb = `rgb(${r},${g},${b})`
   pixelInfo.hex = rgbToHex(r,g,b)
   // 设置 infoBox 显示位置（略偏移）
-  infoPos.value = { top: e.clientY + 20, left: e.clientX + 20 };
 };
+
+const setInfoPos = async (x,y, ex, ey) => {
+  const space = infoPos.value.space
+  const width = 100, height = 140
+  let place = [true,true]
+  place[0] = canvas.value.width > x + infoPos.value.space + width
+  place[1] = canvas.value.height > y + infoPos.value.space + height
+  infoPos.value.top = place[1] ? (ey + space) : ey - space - height
+  infoPos.value.left = place[0] ? (ex + space) : ex - space - width
+  console.log(111, place);
+}
 
 // 画图
 const createShotImg = async () => {
@@ -140,7 +162,7 @@ const createShotImg = async () => {
     ctx = canvas.value.getContext('2d');
     canvas.value.width = image.width;
     canvas.value.height = image.height;
-    ctx.drawImage(image, 0, 0, image.width, image.height - 100);
+    ctx.drawImage(image, 0, 0, image.width, image.height);
     URL.revokeObjectURL(blobUrl)
   };
   image.src = blobUrl
@@ -156,25 +178,37 @@ const rgbToHex = (r, g, b) => {
   return `#${hexR}${hexG}${hexB}`.toUpperCase(); // 转为大写（可选）
 }
 
-const setMiniColor = (x,y) => {
-  const data = ctx.getImageData(x-pixArea.half, y-pixArea.half, pixArea.side, pixArea.side).data
-    // imageData.data 是Uint8ClampedArray，结构为[R,G,B,A,R,G,B,A,...]
-    const pixels = [];
-  
-  // 提取5×5像素的RGB值（忽略Alpha通道）
-  for (let i = 0; i < pixArea.total; i++) {
-    const offset = i * 4; // 每个像素占4个位置（RGBA）
-    pixels.push({
-      r: data[offset],
-      g: data[offset + 1],
-      b: data[offset + 2]
-    });
-  }
 
-  // 转换为Hex并更新网格
-  gridItems.value = pixels.map(pixel => {
-    return {color: rgbToHex(pixel.r, pixel.g, pixel.b)}
-  });
+const setMiniColor2 = (x = 100, y = 200, width = 31, height = 17) => {
+  console.log(111, miniCanvas.width,miniCanvas.height);
+  console.log(222, width);
+  
+  miniCtx.clearRect(0, 0, miniCanvas.value.width, miniCanvas.value.height);
+  // 2. 从主Canvas截取指定区域，绘制到小Canvas（可控制是否平滑）
+  miniCtx.imageSmoothingEnabled = false; // 关闭抗锯齿（像素风放大）
+  miniCtx.drawImage(
+    canvas.value, // 源Canvas
+    x-pixArea.widthHalf, y-pixArea.heigthHalf, width, height,       // 主Canvas上的源区域 (100,200,80,60)
+    0, 0, miniCanvas.value.width, miniCanvas.value.height // 放大到小Canvas的完整尺寸
+  );
+
+  // 中心点
+  const rectSize = 15; // 矩形边长
+  const centerX2 = miniCanvas.value.width / 2 - rectSize / 2;
+  const centerY2 = miniCanvas.value.height / 2 - rectSize / 2;
+  miniCtx.strokeStyle = 'cyan';
+  miniCtx.lineWidth = 2;
+  miniCtx.strokeRect(centerX2, centerY2, rectSize, rectSize);
+  // 边线
+  miniCtx.fillStyle = 'rgba(0, 122, 204, 0.3)'
+  miniCtx.fillRect(0, centerY2, centerX2, rectSize)
+  miniCtx.fillRect(centerX2, 0, rectSize, centerY2)
+  miniCtx.fillRect(centerX2, centerY2+rectSize, rectSize, centerY2)
+  miniCtx.fillRect(centerX2+rectSize, centerY2, centerX2, rectSize)
+}
+const copyColor = async (type) => {
+  await navigator.clipboard.writeText(pixelInfo[type])
+  window.electron.createShotWindow({win:'close'})
 }
 onBeforeUnmount(() => {
   window.removeEventListener('mousemove', updatePosition);
@@ -183,6 +217,7 @@ onBeforeUnmount(() => {
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(async () => {
   await createShotImg()
+  miniCtx = miniCanvas.value.getContext('2d')
   window.addEventListener('mousemove', updatePosition);
 })
 
@@ -221,17 +256,17 @@ onMounted(async () => {
   pointer-events: none;
   z-index: 1000;
 }
-:global(body) {
-  margin: 0;
-  padding: 0;
-}
+// :global(body) {
+//   margin: 0;
+//   padding: 0;
+// }
 .grid-container {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  grid-template-rows: repeat(9, 1fr);
+  grid-template-columns: repeat(31, 1fr);
+  grid-template-rows: repeat(17, 1fr);
   background-color: white;
   gap: 0px;
-  width: 100px;
+  width: 200px;
   height: 100px;
   border: none;
   // border: 1px solid white;

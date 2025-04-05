@@ -153,8 +153,9 @@ h1 {
 .main-content {
   height: 100%;
   min-width: 200px;
-  width: 100%;
-  margin: 0 auto;
+  width: 100% - 8px;
+  // margin: 8px 8px;
+  margin: 8px auto;
   .input-search {
     background-color: #B1B2FF;
     display: flex;
