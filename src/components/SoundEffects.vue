@@ -8,12 +8,14 @@
     <span>文件目录:  </span>
     <a-input size="small" style="width: 200px" v-model:value="rootDir"></a-input>
     <a-button size="small" @click="getMusicDirList">获取</a-button>
+    <a-button v-if="!toUse" size="small" @click="toUse=!toUse"><UnlockOutlined/></a-button>
+    <a-button v-if="toUse" size="small" @click="toUse=!toUse"><LockOutlined/></a-button>
   </div>
   <div class="main-content">
     <div style="width: 25%;height: 100%">
       <a-list class="file-list" size="small" bordered :data-source="fileTree" :split="false" style="border: none" :locale="{emptyText: '列表'}">
         <template #renderItem="{ item }" >
-          <div class="dir-list-item" :class="{'selected':activeDir.id === item.id}" @click="selecteddir(item)" @dragover="onDragOver($event)" @drop="dropMusic($event, item)" >
+          <div class="dir-list-item" :class="{'selected':activeDir.id === item.id}" @click="selecteddir(item)" @dragover.prevent @drop="dropMusic($event, item)" >
             <a-list-item  class="dirList-item" >
               <div style="margin: 0 5px"></div>
               <div style="display: flex; flex-direction: row;justify-content: center">
@@ -60,7 +62,9 @@
 <script setup lang="ts">
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 // import { settingFilled, StarFilled, StarTwoTone } from 'ant-design/icons-vue';
-import { LinkOutlined,AppstoreOutlined,UpOutlined,DownOutlined,DeleteOutlined,DownloadOutlined,UploadOutlined,RollbackOutlined,LeftOutlined,RightOutlined,CloseCircleOutlined } from '@ant-design/icons-vue'
+import { LinkOutlined,AppstoreOutlined,UpOutlined,DownOutlined,DeleteOutlined,
+  DownloadOutlined,UploadOutlined,RollbackOutlined,LeftOutlined,RightOutlined,
+  CloseCircleOutlined,UnlockOutlined,LockOutlined } from '@ant-design/icons-vue'
 import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
 import WaveSurfer from 'wavesurfer.js';
@@ -87,6 +91,7 @@ interface musicItemI {
 }
 
 // 数据
+const toUse = ref(true)
 const router = useRouter();
 let dragFilePath = ''
 let rootDir = ref<string>('E:\\music\\音效')
@@ -118,11 +123,14 @@ const gotoPre = ():void => {
   router.push('/videoTool')
 }
 const onDragOver = ($event):void => {
-  console.log(222221112, $event.preventDefault);
   $event.preventDefault() // 必须阻止默认行为，否则drop事件不会触发
 }
 const dropMusic = async (event, item:dirItemI):Promise<void> => {
   if (item.name !== '收藏') return
+  if (toUse.value) {
+    event.preventDefault()
+    return
+  }
   const dirPath = item.path
   console.log(111, dragFilePath);
   await window.electron.copyFile({dirPath, filePath:dragFilePath})
@@ -208,15 +216,15 @@ const drawWave = async (path:string, index:number, fileType) => {
 }
 
 const onDragStartFile = (event, file:musicItemI) => {
+  if (toUse.value) {
+    event.preventDefault()
+  }
   if(!file.path) {
     message.error('请稍等...')
     return
   }
-  console.log(2222, file.path);
   dragFilePath = file.path
-  event.dataTransfer.setData('filePath', file.path)
-  window.electron.startDrag(file.path)
-  // event.dataTransfer.setData('fileId', file.id)
+  window.electron.startDrag(dragFilePath)
 }
 
 const childIsDir = (dir) => {

@@ -23,9 +23,5 @@ pnpm-debug.log*
 *.sw?
 app/
 dist_electron/
-app/builder-debug.yml
-app/MyApp 1.0.0.exe
-app/MyApp Setup 1.0.0.exe
-app/MyApp Setup 1.0.0.exe.blockmap
 .gitignore
 desktop.ini

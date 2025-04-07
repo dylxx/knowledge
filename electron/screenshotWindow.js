@@ -41,12 +41,13 @@ export async function createScreenshotWindow() {
     const viewUrl = `http://localhost:3000/#/screenshot`;
     screenshotWin.loadURL(viewUrl);
   } else {
-    const indexPath = path.join(app.getAppPath(), 'dist', 'index.html')
-    url = `file://${indexPath}#/screenshot`
+    const indexPath = path.join(_rootPath,'resources', 'dist', 'index.html')
+    const viewUrl = `file://${indexPath}#/screenshot`
+    screenshotWin.loadURL(viewUrl);
   }
   setupScreenshotIpcHandlers()
   // 可选：打开 DevTools
-  // screenshotWin.webContents.openDevTools();
+  screenshotWin.webContents.openDevTools();
   // globalShortcut.register('Control+Shift+I', () => {
   //   win.webContents.openDevTools();
   // });

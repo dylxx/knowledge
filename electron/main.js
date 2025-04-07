@@ -45,7 +45,6 @@ ipcMain.handle('save-temp-file', async (event, filePath) => {
 
 ipcMain.on('ondragstart', (event, filePath) => {
   console.log('path::::', filePath);
-  
   event.sender.startDrag({
     file: filePath,
     icon: path.join(__dirname, 'assets/pop.png')
