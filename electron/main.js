@@ -5,7 +5,8 @@ import dotenv from "dotenv";
 import {setupIpcHandlers} from './ipcHander.js'
 import utils,{ __dirname, _tempDir } from './common.js'
 import path from 'path'
-import {getWindow, createWindow} from './createWindow.js'
+import {createWindow} from './createWindow.js'
+import { windowManager } from "./windowManager.js";
 import {init} from './init.js'
 console.log = log.log
 console.error = log.error
@@ -21,33 +22,10 @@ dotenv.config({ path: envPath });
 let win
 app.whenReady().then(() => {
   createWindow()
-  win = getWindow()
+  win = windowManager.getWindow('mainWin')
   setupIpcHandlers()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
-
-ipcMain.handle('save-temp-file', async (event, filePath) => {
-  const fileName = path.basename(filePath);
-  const destPath = path.join(_tempDir, fileName);
-
-  return new Promise((resolve, reject) => {
-    fs.copyFile(filePath, destPath, (err) => {
-      if (err) {
-        reject(err.message);
-      } else {
-        resolve(destPath);
-      }
-    });
-  });
-});
-
-ipcMain.on('ondragstart', (event, filePath) => {
-  console.log('path::::', filePath);
-  event.sender.startDrag({
-    file: filePath,
-    icon: path.join(__dirname, 'assets/pop.png')
   })
 })
 

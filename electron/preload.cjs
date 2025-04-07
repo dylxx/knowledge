@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld('electron', {
   margeToMp4Finish: (callback) => ipcRenderer.on('margeToMp4Finish', (_event, value) =>  callback(value)),
   // onConversionError: (channel,callback) => ipcRenderer.on('conversion-error', callback),
   onUpSuccess: (callback) => ipcRenderer.on('onUpSuccess', (_event, value) =>  callback(value)),
-  resizeWindow: (size) => ipcRenderer.invoke('resize-window', size),
+  resizeWindow: (size, name) => ipcRenderer.invoke('resize-window', size, name),
   onSearch: (filter) => ipcRenderer.invoke('onSearch', filter),
   getUngroupNote: () => ipcRenderer.invoke('getUngroupNote'),
   getAllNote: () => ipcRenderer.invoke('getAllNote'),

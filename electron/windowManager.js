@@ -22,6 +22,7 @@ class WindowManager {
   }
 
   getWindow(name) {
+    if (!name) return BrowserWindow.getFocusedWindow()
     return this.windows.get(name)
   }
 

@@ -23,8 +23,8 @@ const { spawn } = require('child_process')
 const keyMap = {
   password: process.env.PWD_KEY
 }
-function resizeWindow(event, size) {
-  const win = BrowserWindow.getFocusedWindow()
+function resizeWindow(event, size, name) {
+  const win = windowManager.getWindow(name)
   if (win) {
     const rsize = win.getSize()
     console.log('重置窗口尺寸: ',size);
@@ -545,6 +545,28 @@ const showRightMenu = ($event, params) => {
   menu.popup({ window: BrowserWindow.fromWebContents($event.sender) });  
 }
 
+const saveTempFile = async (event, filePath) => {
+  const fileName = path.basename(filePath);
+  const destPath = path.join(_tempDir, fileName);
+
+  return new Promise((resolve, reject) => {
+    fs.copyFile(filePath, destPath, (err) => {
+      if (err) {
+        reject(err.message);
+      } else {
+        resolve(destPath);
+      }
+    });
+  });
+}
+
+const ondragstart = (event, filePath) => {
+  console.log('path::::', filePath);
+  event.sender.startDrag({
+    file: filePath,
+    icon: path.join(__dirname, 'assets/pop.png')
+  })
+}
 
 function setupIpcHandlers() {
   ipcMain.handle('resize-window', resizeWindow)
@@ -588,6 +610,8 @@ function setupIpcHandlers() {
   ipcMain.handle('delFile',delFile)
   ipcMain.handle('camWindowHandle',camWindowHandle)
   ipcMain.handle('showRightMenu', showRightMenu)
+  ipcMain.handle('save-temp-file', saveTempFile);
+  ipcMain.on('ondragstart', ondragstart)
 }
 
 export {setupIpcHandlers}

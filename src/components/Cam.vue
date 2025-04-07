@@ -79,44 +79,14 @@ const stopCamera = () => {
   }
 }
 const wheelHandle = (event) => {
-  console.log(111, isCtrlPressed.value);
-  
   event.preventDefault()
-  if (isCtrlPressed.value) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-    
-    // 计算鼠标在视频内容中的位置
-    const contentX = viewport.value.x + mouseX / viewport.value.scale;
-    const contentY = viewport.value.y + mouseY / viewport.value.scale;
-    
-    // 计算缩放因子
-    const delta = event.deltaY > 0 ? -0.1 : 0.1;
-    const newScale = Math.max(0.5, Math.min(viewport.value.scale + delta, 5));
-    
-    // 计算新的偏移量以保持鼠标下的内容不变
-    viewport.value.x = contentX - (mouseX / newScale);
-    viewport.value.y = contentY - (mouseY / newScale);
-    
-    // 限制边界
-    constrainViewport();
-    viewport.value.scale = newScale;
-  } else {
-    let rate = 10
-    rate = event.deltaY > 0 ? rate*(-1) : rate
-    camSize.value = [camSize.value[0] + rate, camSize.value[1] + rate*camSize.value[2], camSize.value[2]]
-    window.electron.resizeWindow([camSize.value[0], camSize.value[1]])
-  }
-}
-const resizeWindow = (width, height) => {
-  window.electron.resizeWindow([width, height])
-  camSize.value = [width, height]
+  let rate = 10
+  rate = event.deltaY > 0 ? rate*(-1) : rate
+  camSize.value = [camSize.value[0] + rate, camSize.value[1] + rate*camSize.value[2], camSize.value[2]]
+  window.electron.resizeWindow([camSize.value[0], camSize.value[1]])
 }
 onBeforeUnmount(() => {
   stopCamera();
-  window.removeEventListener('keydown', handleKeyDown);
-  window.removeEventListener('keyup', handleKeyUp);
 });
 
 
@@ -142,8 +112,6 @@ const videoStyle = computed(() => {
 
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(() => {
-  window.addEventListener('keydown', handleKeyDown);
-  window.addEventListener('keyup', handleKeyUp);
   startCamera()
 })
 

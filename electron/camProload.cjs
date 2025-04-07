@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld('electron', {
   receive: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
   createShotWindow: (params) => ipcRenderer.invoke('createShotWindow', params),
   showRightMenu: (params) => ipcRenderer.invoke('showRightMenu', params),
-  resizeWindow: (size) => ipcRenderer.invoke('resize-window', size),
+  resizeWindow: (size) => ipcRenderer.invoke('resize-window', size, 'camWin'),
 });
 
 window.addEventListener('DOMContentLoaded', () => {
