@@ -27,8 +27,8 @@
       <canvas
         ref="miniCanvas"
         style="width: 100px;height: 70px"
-        :width="300"
-        :height="200"
+        :width="310"
+        :height="170"
       >
       </canvas>
       <div>{{ pixelInfo.rgb }}</div>
@@ -180,12 +180,10 @@ const rgbToHex = (r, g, b) => {
 
 
 const setMiniColor2 = (x = 100, y = 200, width = 31, height = 17) => {
-  console.log(111, miniCanvas.width,miniCanvas.height);
-  console.log(222, width);
-  
   miniCtx.clearRect(0, 0, miniCanvas.value.width, miniCanvas.value.height);
   // 2. 从主Canvas截取指定区域，绘制到小Canvas（可控制是否平滑）
   miniCtx.imageSmoothingEnabled = false; // 关闭抗锯齿（像素风放大）
+  console.log(1212, width, height,miniCanvas.value.width, miniCanvas.value.height );
   miniCtx.drawImage(
     canvas.value, // 源Canvas
     x-pixArea.widthHalf, y-pixArea.heigthHalf, width, height,       // 主Canvas上的源区域 (100,200,80,60)
@@ -193,18 +191,20 @@ const setMiniColor2 = (x = 100, y = 200, width = 31, height = 17) => {
   );
 
   // 中心点
-  const rectSize = 15; // 矩形边长
-  const centerX2 = miniCanvas.value.width / 2 - rectSize / 2;
-  const centerY2 = miniCanvas.value.height / 2 - rectSize / 2;
+  const rectSize = 30; // 矩形边长
+  const rectSizeWidth = 15; // 矩形边长
+  const rectSizeHeight = 11.25; // 矩形边长
+  const centerX2 = miniCanvas.value.width / 2 - rectSizeWidth / 2;
+  const centerY2 = miniCanvas.value.height / 2 - rectSizeHeight / 2;
   miniCtx.strokeStyle = 'cyan';
   miniCtx.lineWidth = 2;
-  miniCtx.strokeRect(centerX2, centerY2, rectSize, rectSize);
+  miniCtx.strokeRect(centerX2, centerY2, rectSizeWidth, rectSizeHeight);
   // 边线
   miniCtx.fillStyle = 'rgba(0, 122, 204, 0.3)'
-  miniCtx.fillRect(0, centerY2, centerX2, rectSize)
-  miniCtx.fillRect(centerX2, 0, rectSize, centerY2)
-  miniCtx.fillRect(centerX2, centerY2+rectSize, rectSize, centerY2)
-  miniCtx.fillRect(centerX2+rectSize, centerY2, centerX2, rectSize)
+  miniCtx.fillRect(0, centerY2, centerX2, rectSizeHeight)
+  miniCtx.fillRect(centerX2, 0, rectSizeWidth, centerY2)
+  miniCtx.fillRect(centerX2, centerY2+rectSizeHeight, rectSizeWidth, centerY2)
+  miniCtx.fillRect(centerX2+rectSizeWidth, centerY2, centerX2, rectSizeHeight)
 }
 const copyColor = async (type) => {
   await navigator.clipboard.writeText(pixelInfo[type])

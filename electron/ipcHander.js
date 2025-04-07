@@ -1,5 +1,5 @@
 // ipcHandler.js
-import { ipcMain, BrowserWindow, app,desktopCapturer,screen } from 'electron'
+import { ipcMain, BrowserWindow, app,desktopCapturer,screen,Menu } from 'electron'
 // 这样改回 require 方式
 let screenshotWin = null;
 
@@ -8,12 +8,14 @@ import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import {query, runDb, execSql} from './database.js'
 import ffmpeg from 'fluent-ffmpeg'
-import {getWindow} from './createWindow.js'
 import utils,{__dirname, _rootPath, _tempDir, _userDataDir,_out } from './common.js'
 import mime from 'mime-types'
 import {parseFile} from 'music-metadata'
 import { createRequire } from "module";
 import screenshotWindow from "./screenshotWindow.js";
+import camWindow from "./camWindow.js";
+import rightMenu from "./rightMenu.js";
+import { windowManager } from "./windowManager.js";
 const require = createRequire(import.meta.url)
 const { spawn } = require('child_process')
 // const screenshot = require('screenshot-desktop');
@@ -25,6 +27,7 @@ function resizeWindow(event, size) {
   const win = BrowserWindow.getFocusedWindow()
   if (win) {
     const rsize = win.getSize()
+    console.log('重置窗口尺寸: ',size);
     win.setSize(size[0]||rsize[0], size[1]||rsize[1], true)
   }
 }
@@ -169,14 +172,14 @@ const uploadFile = (event, fileData, dirType) => {
   const filePath = path.join(dir, fullName)
   fs.writeFileSync(filePath, Buffer.from(fileData.content))
   const result = {id: fileData.id, name, extension, path: filePath, fullName}
-  const win = getWindow()
+  const win = windowManager.getWindow('mainWin')
   win.webContents.send('onUpSuccess', result);
   return result
 }
 
 // 转换文件为mp4并实时返回进度
 const convertToMp4 = async (inputFilePath, outputFilePath, backParams) => {
-  const win = getWindow()
+  const win = windowManager.getWindow('mainWin')
   ffmpeg(inputFilePath)
   .output(outputFilePath)
   .on('progress', (progress) => {
@@ -206,7 +209,7 @@ const convertToMp4 = async (inputFilePath, outputFilePath, backParams) => {
 const convertMedia = async (inFilename, outFilename,format, backParams) => {
   const inputFilePath = path.join(_tempDir, inFilename)
   const outputFilePath = path.join(_out, outFilename) + `.${format}`
-  const win = getWindow()
+  const win = windowManager.getWindow('mainWin')
   ffmpeg(inputFilePath)
   .output(outputFilePath)
   .on('progress', (progress) => {
@@ -229,7 +232,7 @@ const convertMedia = async (inFilename, outFilename,format, backParams) => {
 const margeToMp4 = (event, fileData) => {
   const simpleName = fileData.name.substring(0,fileData.name.lastIndexOf('.'))
   const outputPath = path.join(_out, `${simpleName}.mp4`); // 输出文件路径
-  const win = getWindow()
+  const win = windowManager.getWindow('mainWin')
 
   ffmpeg()
     .input(fileData.vFilePath)
@@ -498,12 +501,19 @@ function parseAudioDevices(output) {
 
 const createShotWindow = ($event, params) => {
   console.log(222, params.win);
-  
   if (params.win === 'create') {
     screenshotWindow.createScreenshotWindow()
   } else if (params.win === 'close') {
     console.log(1111);
     screenshotWindow.closeScreenshotWindow()
+  }
+}
+
+const camWindowHandle = ($event, params) => {
+  if (params.win === 'create') {
+    camWindow.createCamWindow()
+  } else if (params.win === 'close') {
+    camWindow.closeCamWindow()
   }
 }
 
@@ -525,6 +535,14 @@ const copyFile = ($event, params) => {
 }
 const delFile = ($event, params) => {
   fs.unlinkSync(params.filePath)
+}
+
+// 右键菜单
+const showRightMenu = ($event, params) => {
+  const menuTemp = rightMenu.getMenu(params.win)
+  if (menuTemp === null) return
+  const menu = Menu.buildFromTemplate(menuTemp);
+  menu.popup({ window: BrowserWindow.fromWebContents($event.sender) });  
 }
 
 
@@ -568,6 +586,8 @@ function setupIpcHandlers() {
   ipcMain.handle('getShotPhoto', getShotPhoto)
   ipcMain.handle('copyFile',copyFile)
   ipcMain.handle('delFile',delFile)
+  ipcMain.handle('camWindowHandle',camWindowHandle)
+  ipcMain.handle('showRightMenu', showRightMenu)
 }
 
 export {setupIpcHandlers}

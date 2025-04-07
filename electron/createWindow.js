@@ -3,14 +3,14 @@ import { app, BrowserWindow, Menu, globalShortcut,Tray, screen } from 'electron'
 import path from 'path'
 import utils,{ __dirname, _rootPath, _assetsDir } from './common.js'
 import fs from 'fs'
+import { windowManager } from "./windowManager.js";
 let tray
 let isHidden = false;
 let win
 const createWindow = () => {
   const {x,y} = getWindowBounds()
   console.log(path.join(_rootPath,'resources', 'dist', 'no.ico'));
-  
-  win = new BrowserWindow({
+  const options = {
     x,
     y,
     width: 361,
@@ -26,7 +26,8 @@ const createWindow = () => {
       preload: path.join(__dirname, 'preload.cjs'),
       devTools: true
     }
-  })
+  }
+  win = windowManager.createWindow('mainWin', options)
   Menu.setApplicationMenu(null)
   win.webContents.setBackgroundThrottling(false)
   // Menu.setApplicationMenu(null); // 取消默认菜单
@@ -129,11 +130,7 @@ const createWindow = () => {
     }
   }
   // 记录窗口关闭的位置
-  
   win.on('close', saveWindowBounds)
 }
-function getWindow() {
-  return win
-}
 
-export {createWindow, getWindow}
+export {createWindow}

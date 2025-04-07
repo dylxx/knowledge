@@ -4,6 +4,7 @@ import {setupScreenshotIpcHandlers} from './screenshotHander.js'
 import utils,{ __dirname, _rootPath, _assetsDir,_tempDir } from './common.js'
 import screenshot from "screenshot-desktop";
 import fs from 'fs'
+import { windowManager } from "./windowManager.js";
 let screenshotWin= null;
 
 export async function createScreenshotWindow() {
@@ -17,7 +18,7 @@ export async function createScreenshotWindow() {
   const { width, height } = screen.getPrimaryDisplay().bounds;
   const {img, filePath} = await captureFullScreen()
   // 创建窗口
-  screenshotWin = new BrowserWindow({
+  const options = {
     width,
     height,
     x: 0,
@@ -34,8 +35,8 @@ export async function createScreenshotWindow() {
       nodeIntegration: false,
       preload: path.join(__dirname, 'screenshotProload.cjs'), // 如需要
     },
-  });
-
+  }
+  screenshotWin = windowManager.createWindow('screenshotWin', options)
   // 传截图地址作为查询参数传入页面
   if (process.env.NODE_ENV === 'development') {
     const viewUrl = `http://localhost:3000/#/screenshot`;
@@ -64,7 +65,6 @@ const captureFullScreen = async () => {
       // 可以指定质量 (仅对 jpg 有效)
       // quality: 100 
     });
-    
     // img 是 Buffer，可以直接保存
     const filePath = path.join(_tempDir, 'screenshot.png')
     fs.writeFileSync(filePath, img);

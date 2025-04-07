@@ -11,7 +11,8 @@ contextBridge.exposeInMainWorld('electron', {
   off: (channel, listener) => ipcRenderer.removeListener(channel, listener),
   receive: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
   createShotWindow: (params) => ipcRenderer.invoke('createShotWindow', params),
-  getShotPhoto: (params) => ipcRenderer.invoke('getShotPhoto', params),
+  showRightMenu: (params) => ipcRenderer.invoke('showRightMenu', params),
+  resizeWindow: (size) => ipcRenderer.invoke('resize-window', size),
 });
 
 window.addEventListener('DOMContentLoaded', () => {

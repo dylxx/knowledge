@@ -7,6 +7,7 @@ import Diary from '../components/Diary.vue';
 import SoundEffects from "../components/SoundEffects.vue";
 import TomatoClock from "../components/TomatoClock.vue";
 import Screenshot from "../components/Screenshot.vue";
+import Cam from "../components/Cam.vue";
 
 const routes = [
   { path: '/',name:'Home', component: Home },
@@ -16,6 +17,7 @@ const routes = [
   { path: '/soundEffects', name:'soundEffects', component: SoundEffects},
   { path: '/tomatoClock', name:'tomatoClock', component: TomatoClock},
   { path: '/screenshot', name:'screenshot', component: Screenshot},
+  { path: '/cam', name:'cam', component: Cam},
 ];
 
 const toolLine = [

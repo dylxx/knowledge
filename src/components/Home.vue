@@ -9,9 +9,10 @@
     </div>
     <div style="display: flex;justify-content: space-evenly;" v-if="!dataList.list.length">
       <BgColorsOutlined class="hoverActive" @click="absorbColor()" />
-      <VideoCameraOutlined class="hoverActive" @click="goto('videoTool')" />
+      <PlaySquareOutlined class="hoverActive" @click="goto('videoTool')" />
       <SoundOutlined  class="hoverActive" @click="goto('soundEffects')"/>
       <ScheduleOutlined  class="hoverActive" @click="goto('tomatoClock')"/>
+      <VideoCameraOutlined  class="hoverActive" @click="openCamWindow"/>
     </div>
     <a-list  v-show="dataList.list.length" class="main-list" size="small" bordered :data-source="dataList.list" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
       <template #renderItem="{ item, index }">
@@ -30,7 +31,7 @@
   <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
-import { SettingOutlined,RightOutlined,VideoCameraOutlined,SoundOutlined,ScheduleOutlined,BgColorsOutlined } from '@ant-design/icons-vue'
+import { SettingOutlined,RightOutlined,VideoCameraOutlined,SoundOutlined,ScheduleOutlined,BgColorsOutlined,PlaySquareOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 
@@ -103,6 +104,10 @@ const copySel = async () => {
   const item = dataList.list[selIndex.value]
   const text = item.content || item.password
   await navigator.clipboard.writeText(text)
+}
+
+const openCamWindow = async () => {
+  window.electron.camWindowHandle({win:'create'})
 }
 
 
