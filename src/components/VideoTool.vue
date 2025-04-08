@@ -149,19 +149,15 @@ const record = async () => {
 }
 const recordStart = async () => {
   const device = deviceTooltip.selected ? deviceTooltip.selected : deviceList.value[0]
-  console.log(222, device);
-  
   const resp = await window.electron.toRecord({type: 'start', device})
   const {id,name,type,path} = resp
   recording.id = id
   fileData.list.push({id,name,type,path,percent:99,active:'active'})
-  console.log('filedata::::', fileData.list);
 }
 
 const recordStop = async () => {
   const device = deviceTooltip.selected ? deviceTooltip.selected : deviceList.value[0]
   await window.electron.toRecord({type: 'stop', device})
-  console.log(111);
   const file = fileData.list.find(item => item.id === recording.id)
   recording.id = 0
   file.percent = 100
@@ -245,8 +241,6 @@ const dropFileTrans = async (event) => {
     reader.onload = (e) => {
       const fileContent = e.target.result;
       // 将文件内容传递到主进程进行处理
-      console.log(1111111111, fileContent);
-      
       window.electron.processFile({
         id: uuid,
         name: file.name,

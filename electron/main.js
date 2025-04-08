@@ -10,7 +10,6 @@ import { windowManager } from "./windowManager.js";
 import {init} from './init.js'
 console.log = log.log
 console.error = log.error
-
 // 设置环境变量
 const envPath = app.isPackaged
   ? path.join(process.resourcesPath, ".env") // 打包后路径

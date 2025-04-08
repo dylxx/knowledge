@@ -45,8 +45,6 @@ const characters = ref([
   "Character 8",
 ]);
 const cliOne = () => {
-  console.log(111, router);
-  
 }
 const backHome = () => {
   router.push('/')

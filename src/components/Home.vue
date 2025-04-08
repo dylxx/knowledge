@@ -126,7 +126,6 @@ onMounted(() => {
     const resizeObserver = new ResizeObserver(entries => {
       entries.forEach(async entry => {
         // const size = {width: Math.ceil(entry.contentRect.width) + 20, height: Math.ceil(entry.contentRect.height) + 20}
-        // console.log('新的宽度:', size.width, '新的高度:', size.height)
         // window.electron.resizeWindow(size)
         if (toResize.value) {
           window.electron.resizeWindow([null, entry.contentRect.height+ 20])

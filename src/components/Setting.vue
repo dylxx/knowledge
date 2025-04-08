@@ -45,7 +45,6 @@ const init = async () => {
   minHot.value = cMinHot
 }
 const cliPwdShow = (show) => {
-  console.log(pin.value);
   const cPin = '4869'
   if (show && pin.value === cPin) {
     showPwdMenu.value = true

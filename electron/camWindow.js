@@ -6,26 +6,34 @@ import {windowManager} from "./windowManager.js";
 
 export async function createCamWindow() {
   // 如果已有窗口，先关闭
+  console.log('get');
   let camWin = windowManager.getWindow('camWin')
-  if (camWin) camWin.close()
+  console.log('close');
+  
+  if (camWin) await camWin.close()
   // 创建窗口
   const options = {
     width: 150,
     height: 150,
     x: 0,
     y: 0,
-    transparent: true,
+    transparent: false,
     frame: false,
     alwaysOnTop: true,
     hasShadow: false,
     skipTaskbar: true,
     resizable: true,
+    type: 'normal',    // 或 'normal'
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, 'camProload.cjs'), // 如需要
     },
   }
+  // camWin.hookWindowMessage(0x0112, () => { // WM_SYSCOMMAND
+  //   return true // 阻止默认行为
+  // })
+  console.log('create');
   camWin = windowManager.createWindow('camWin', options)
   camWin.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
     const allowedPermissions = ['media', 'camera']

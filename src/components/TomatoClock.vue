@@ -246,7 +246,6 @@ function formatTime(seconds) {
 
 const initMusic = async () => {
   const mSrc = await window.electron.getConf('tomatoMusic')
-  console.log(111,mSrc);
   
   if (!mSrc) return
   const extend = mSrc.substring(mSrc.lastIndexOf('.'))

@@ -1,17 +1,18 @@
 <template>
   <div class="content-main">
     <div @mouseenter="showDrag = true" @contextmenu="showContextMenu($event)" class="cam-main" @wheel="wheelHandle($event)">
-      <div class="drag-area"></div>
-      <video 
-        ref="videoRef" 
-        autoplay
-        playsinline
-        class="cam-video"
-        :style="videoStyle"
-        @dblclick="setDragCam"
-        @mousedown="handleKeyDown"
-        @mouseup="handleKeyUp"
-      ></video>
+      <div class="drag-area">
+        <img class="drag-img" src="../assets/nekosensen.png" alt="">
+      </div>
+      <div class="video-mask">
+        <video 
+          ref="videoRef" 
+          autoplay
+          playsinline
+          class="cam-video"
+          :style="videoStyle"
+        ></video>
+      </div>
     </div>
   </div>
 </template>
@@ -19,27 +20,13 @@
 <script setup>
 import { ref, reactive, watch,onUnmounted,computed, onMounted, onBeforeUnmount } from "vue";
 import "../style/main.less";
+import 'vue3-draggable-resizable/dist/Vue3DraggableResizable.css'
+import Vue3DraggableResizable from 'vue3-draggable-resizable'
 
 // 数据
 const camSize = ref([150,150,1])
-const dragCam = ref(false)
 const showDrag = ref(false)
-const isCtrlPressed = ref(false);
-const camPosition = ref([0, 0]); // [x, y] 摄像头内容的偏移位置
-// const dragStyle = ref({
-//   width:'120px',
-//   height: '120px'
-// })
-const viewport = ref({
-  x: 0,          // 当前显示区域的X偏移
-  y: 0,          // 当前显示区域的Y偏移
-  scale: 1,      // 当前缩放比例
-  isDragging: false, // 是否正在拖动
-  startX: 0,     // 拖动起始X
-  startY: 0,     // 拖动起始Y
-  originalX: 0,  // 拖动前X偏移
-  originalY: 0   // 拖动前Y偏移
-});
+const camPosition = ref([0, 0]); // [x, y] 摄像头内容的偏移位置:百分比
 const videoRef = ref(null)
 let stream = null
 // 方法
@@ -50,7 +37,6 @@ const startCamera = async () => {
       video: true,
       audio: false
     })
-    
     if (videoRef.value) {
       videoRef.value.srcObject = stream
     }
@@ -59,16 +45,6 @@ const startCamera = async () => {
     alert('无法访问摄像头: ' + error.message)
   }
 }
-const setDragCam = () => {
-  dragCam.value = !dragCam.value
-}
-// const dragStyle = computed(() => {
-//   console.log(camSize);
-//   return {
-//     width: `${camSize[0]}px`,
-//     height: `${camSize[1]}px`
-//   }
-// })
 const stopCamera = () => {
   if (stream) {
     stream.getTracks().forEach(track => track.stop())
@@ -90,23 +66,11 @@ onBeforeUnmount(() => {
 });
 
 
-const handleKeyDown = (e) => {
-  if (e.key === 'Control') {
-    isCtrlPressed.value = true;
-  }
-};
-
-const handleKeyUp = (e) => {
-  if (e.key === 'Control') {
-    isCtrlPressed.value = false;
-  }
-};
-
 const videoStyle = computed(() => {
-  const scale = viewport.value.scale;
   return {
     width: `${camSize.value[0]}px`,
     height: `${camSize.value[1]}px`,
+    'object-position':`${camPosition.value[0]}% ${camPosition.value[1]}%`,
   };
 });
 
@@ -119,7 +83,6 @@ onMounted(() => {
 
 <style scoped  lang="less">
 .content-main {
-  background-color: #fff;
   width: auto;
   height: auto;
   display: flex;
@@ -138,22 +101,28 @@ onMounted(() => {
   overflow: hidden; /* 防止内容溢出 */
   // background-color: rgba(0, 0, 0, 0.9);
 }
-.cam-video {
-  border-radius: 50%; /* 这将创建圆形效果 */
-  object-fit: cover;  /* 确保视频填充整个圆形区域 */
-  object-position: 20% 50%; /* 水平20%，垂直居中 */
-  display: block;
-  margin: 0 0;
-  background-color: rgba(0, 0, 0, 0);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); /* 可选：添加阴影效果 */
-  // -webkit-app-region: drag;
+.video-mask {
+  border-radius: 50%;
+  overflow: hidden; /* 隐藏超出圆形区域的部分 */
+  .cam-video {
+    border-radius: 50%; /* 这将创建圆形效果 */
+    object-fit: cover;  /* 确保视频填充整个圆形区域 */
+    object-position: 50% 50%; /* 水平20%，垂直居中 */
+    display: block;
+    margin: 0 0;
+    // -webkit-app-region: drag;
+  }
 }
 .drag-area {
   position: fixed;
-  width: 20px;
-  height: 20px;
+  width: 25%;
+  height: 25%;
   right: 0;
   -webkit-app-region: drag;
-  background-color: rgb(216, 255, 242,0.5);
+  .drag-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 保持比例填充整个容器，可能裁剪 */
+  }
 }
 </style>

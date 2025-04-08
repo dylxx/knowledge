@@ -283,8 +283,6 @@ const selectedGroup = (group) => {
   groupSelectedKeys.value.push(group.uuid)
   menuOpenKeys.value.length = 0
   menuSelectedKeys.value.length = 0
-  console.log(123);
-  
   refreshList()
 }
 
@@ -428,7 +426,6 @@ const deleteNote = async (note) => {
 
 
 const onDragOver = (event) => {
-  console.log(event.preventDefault);
   event.preventDefault() // 必须阻止默认行为，否则drop事件不会触发
 }
 

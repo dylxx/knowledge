@@ -147,7 +147,6 @@ const setInfoPos = async (x,y, ex, ey) => {
   place[1] = canvas.value.height > y + infoPos.value.space + height
   infoPos.value.top = place[1] ? (ey + space) : ey - space - height
   infoPos.value.left = place[0] ? (ex + space) : ex - space - width
-  console.log(111, place);
 }
 
 // 画图
@@ -183,7 +182,6 @@ const setMiniColor2 = (x = 100, y = 200, width = 31, height = 17) => {
   miniCtx.clearRect(0, 0, miniCanvas.value.width, miniCanvas.value.height);
   // 2. 从主Canvas截取指定区域，绘制到小Canvas（可控制是否平滑）
   miniCtx.imageSmoothingEnabled = false; // 关闭抗锯齿（像素风放大）
-  console.log(1212, width, height,miniCanvas.value.width, miniCanvas.value.height );
   miniCtx.drawImage(
     canvas.value, // 源Canvas
     x-pixArea.widthHalf, y-pixArea.heigthHalf, width, height,       // 主Canvas上的源区域 (100,200,80,60)

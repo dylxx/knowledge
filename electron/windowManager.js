@@ -8,12 +8,14 @@ class WindowManager {
   }
 
   createWindow(name, options, customData = {}) {
+    console.log('create', [...this.windows.keys()]);
     const win = new BrowserWindow(options)
     this.windows.set(name, win)
     this.windowData.set(name, customData)
     
     // 窗口关闭时清理
-    win.on('closed', () => {
+    win.on('close', () => {
+      console.log('close', [...this.windows.keys()]);
       this.windows.delete(name)
       this.windowData.delete(name)
     })
@@ -22,6 +24,7 @@ class WindowManager {
   }
 
   getWindow(name) {
+    console.log('get', [...this.windows.keys()]);
     if (!name) return BrowserWindow.getFocusedWindow()
     return this.windows.get(name)
   }

@@ -132,7 +132,6 @@ const dropMusic = async (event, item:dirItemI):Promise<void> => {
     return
   }
   const dirPath = item.path
-  console.log(111, dragFilePath);
   await window.electron.copyFile({dirPath, filePath:dragFilePath})
   getMusicDirList()
   dragFilePath = null
@@ -158,7 +157,7 @@ const selectMusic = async (music:musicItemI, index:number) => {
   const url = URL.createObjectURL(blob)
   if (!audioDom.value[index]) return
   audioDom.value[index].src = url
-  audioDom.value[index].play().then().catch((error) => console.log(error))
+  audioDom.value[index].play().then().catch((error) => (error))
 }
 
 const pauseMusic = (music:musicItemI, index:number):void => {
@@ -187,7 +186,6 @@ const selecteddir = async (dir:dirItemI) => {
   }
   activeDir.value = dir
   // 清理画布
-  console.log(waveformRef.value.length);
   for (let index = 0; index < dir.children.length; index++) {
     waveformRef.value[index] && (waveformRef.value[index].innerHTML = '')
     const music = dir.children[index];
