@@ -121,9 +121,12 @@ const search = async (evnet, params) => {
   return list
 }
 
-function toParams(obj) {
+function toParams(obj, excludeList) {
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) { // 确保只处理对象自身的属性
+    if (excludeList && excludeList.includes(key)) {
+      delete obj[key];
+      continue
+    }else if (obj.hasOwnProperty(key)) { // 确保只处理对象自身的属性
       const newKey = `$${key}`; // 新属性名，加上 $ 符号
       obj[newKey] = obj[key]; // 将值赋给新属性名
       delete obj[key]; // 删除原始属性
@@ -568,6 +571,16 @@ const ondragstart = (event, filePath) => {
   })
 }
 
+const savePersonRel = async ($event, params) => {
+  // 保存或是添加
+  const sqlName = params.id ? 'savePersonRel':'addPersonRel'
+  params.uuid = params.uuid || uuidv4()
+  const newPersonRel = JSON.parse(JSON.stringify(params))
+  const result = await runDb(sqlName, toParams(params, ['id']))
+  console.log(2, result);
+  return newPersonRel
+}
+
 function setupIpcHandlers() {
   ipcMain.handle('resize-window', resizeWindow)
   ipcMain.handle('getUngroupNote',  getUngroupNote)
@@ -612,6 +625,7 @@ function setupIpcHandlers() {
   ipcMain.handle('showRightMenu', showRightMenu)
   ipcMain.handle('save-temp-file', saveTempFile);
   ipcMain.on('ondragstart', ondragstart)
+  ipcMain.handle('savePersonRel',savePersonRel)
 }
 
 export {setupIpcHandlers}

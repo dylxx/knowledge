@@ -8,6 +8,7 @@ import SoundEffects from "../components/SoundEffects.vue";
 import TomatoClock from "../components/TomatoClock.vue";
 import Screenshot from "../components/Screenshot.vue";
 import Cam from "../components/Cam.vue";
+import Relation from "../components/Relation.vue";
 
 const routes = [
   { path: '/',name:'Home', component: Home },
@@ -18,6 +19,7 @@ const routes = [
   { path: '/tomatoClock', name:'tomatoClock', component: TomatoClock},
   { path: '/screenshot', name:'screenshot', component: Screenshot},
   { path: '/cam', name:'cam', component: Cam},
+  { path: '/relation', name:'relation', component: Relation},
 ];
 
 const toolLine = [

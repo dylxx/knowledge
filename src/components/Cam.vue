@@ -110,6 +110,8 @@ onMounted(() => {
     object-position: 50% 50%; /* 水平20%，垂直居中 */
     display: block;
     margin: 0 0;
+    border: solid 2px #ffffff;
+    box-sizing: border-box;
     // -webkit-app-region: drag;
   }
 }

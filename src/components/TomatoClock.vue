@@ -1,8 +1,8 @@
 <template style="height: 200px">
   <div class="drag" style="display: flex; justify-content: space-evenly;margin-top: 8px">
-    <LeftOutlined class="hoverActive noDrag" @click="gotoPre" />
-    <RollbackOutlined class="hoverActive noDrag" @click="backHome"/>
-    <RightOutlined class="hoverActive noDrag" @click="gotoNext"/>
+    <LeftOutlined class="hoverActive no-drag" @click="gotoPre" />
+    <RollbackOutlined class="hoverActive no-drag" @click="backHome"/>
+    <RightOutlined class="hoverActive no-drag" @click="gotoNext"/>
   </div>
   <div class="main-content">
     <div class="main-left ">

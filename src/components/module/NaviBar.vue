@@ -1,9 +1,8 @@
 <template>
-  <div class="moveBar" ></div>
-  <div style="display: flex; justify-content: space-evenly">
-    <LeftOutlined class="hoverActive" @click="gotoPre" />
-    <RollbackOutlined class="hoverActive" @click="backHome"/>
-    <RightOutlined class="hoverActive" @click="gotoDiary"/>
+  <div class="main-content drag" style="display: flex; justify-content: space-evenly">
+    <LeftOutlined class="hoverActive no-drag" @click="gotoPre" />
+    <RollbackOutlined class="hoverActive no-drag" @click="backHome"/>
+    <RightOutlined class="hoverActive no-drag" @click="gotoDiary"/>
   </div>
 </template>
 
@@ -42,5 +41,7 @@ onMounted(() => {
 </script>
 
 <style scoped  lang="less">
-
+.main-content {
+  margin: 5px;
+}
 </style>

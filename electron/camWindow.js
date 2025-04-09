@@ -17,13 +17,12 @@ export async function createCamWindow() {
     height: 150,
     x: 0,
     y: 0,
-    transparent: false,
+    transparent: true,
     frame: false,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     hasShadow: false,
-    skipTaskbar: true,
+    skipTaskbar: false,
     resizable: true,
-    type: 'normal',    // 或 'normal'
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

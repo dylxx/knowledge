@@ -13,6 +13,7 @@
       <SoundOutlined  class="hoverActive" @click="goto('soundEffects')"/>
       <ScheduleOutlined  class="hoverActive" @click="goto('tomatoClock')"/>
       <VideoCameraOutlined  class="hoverActive" @click="openCamWindow"/>
+      <HeartOutlined  class="hoverActive" @click="goto('relation')" />
     </div>
     <a-list  v-show="dataList.list.length" class="main-list" size="small" bordered :data-source="dataList.list" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
       <template #renderItem="{ item, index }">
@@ -31,7 +32,7 @@
   <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
-import { SettingOutlined,RightOutlined,VideoCameraOutlined,SoundOutlined,ScheduleOutlined,BgColorsOutlined,PlaySquareOutlined } from '@ant-design/icons-vue'
+import { SettingOutlined,RightOutlined,VideoCameraOutlined,SoundOutlined,ScheduleOutlined,BgColorsOutlined,PlaySquareOutlined,HeartOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 

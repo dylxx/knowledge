@@ -19,6 +19,7 @@ const envPath = app.isPackaged
 dotenv.config({ path: envPath });
 
 let win
+app.disableHardwareAcceleration();
 app.whenReady().then(() => {
   createWindow()
   win = windowManager.getWindow('mainWin')

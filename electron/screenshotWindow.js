@@ -33,6 +33,7 @@ export async function createScreenshotWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      permissions: ['clipboard-write', 'clipboard-read'],
       preload: path.join(__dirname, 'screenshotProload.cjs'), // 如需要
     },
   }

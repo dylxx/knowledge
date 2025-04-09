@@ -1,8 +1,8 @@
 <template  style="height: 200px">
   <div class="topBar drag" style="display: flex; justify-content: space-evenly">
-    <LeftOutlined class="hoverActive noDrag" @click="gotoPre" />
-    <RollbackOutlined class="hoverActive noDrag" @click="backHome"/>
-    <RightOutlined class="hoverActive noDrag" @click="gotoDiary"/>
+    <LeftOutlined class="hoverActive no-drag" @click="gotoPre" />
+    <RollbackOutlined class="hoverActive no-drag" @click="backHome"/>
+    <RightOutlined class="hoverActive no-drag" @click="gotoDiary"/>
   </div>
   <div class="main-content">
     <div class="transMp4-main">
@@ -127,6 +127,7 @@ const treeData = [
       {title: 'png', key: 'png'},
       {title: 'jpg', key: 'jpg'},
       {title: 'webp', key: 'webp'},
+      {title: 'ico', key: 'ico'},
     ]
   },
 ]

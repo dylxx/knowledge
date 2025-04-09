@@ -98,6 +98,30 @@ const sqls = {
     WHERE name like $keyword or username like $keyword
     order by createtime desc;`
   },
+  addPersonRel: {
+    method: 'run',
+    sql: `
+      insert into person_relations(uuid,name,gender,birth_date,location,relationship,contact_info,mbti_type,likes,dislikes,intersections,stories,first_meet_date,notes,avoid,active) 
+      values($uuid,$name,$gender,$birth_date,$location,$relationship,$contact_info,$mbti_type,$likes,$dislikes,$intersections,$stories,$first_meet_date,$notes,$avoid,$active)
+    `
+  },
+  savePersonRel: {
+    method: 'run',
+    sql: `
+      update person_relations set
+      name=$name,gender=$gender,birth_date=$birth_date,location=$location,relationship=$relationship,
+      contact_info=$contact_info,mbti_type=$mbti_type,likes=$likes,dislikes=$dislikes,intersections=$intersections,
+      stories=$stories,first_meet_date=$first_meet_date,notes=$notes,avoid=$avoid,active=$active where uuid=$uuid
+    `
+  },
+  getPersonRelList: {
+    method: 'all',
+    sql: `
+    select *
+    from person_relations
+    order by id desc
+    `
+  }
 }
 
 // 创建数据库连接
@@ -174,6 +198,44 @@ function initDB() {
         console.error('创建表失败:', err.message);
       } else {
         console.log('userpwd表已创建或已存在');
+      }
+    });
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS person_relations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          uuid TEXT NOT NULL UNIQUE,
+          name TEXT NOT NULL,
+          gender TEXT,
+          birth_date TEXT,
+          location TEXT,
+          relationship TEXT,
+          contact_info TEXT,
+          mbti_type TEXT,
+          likes TEXT,
+          dislikes TEXT,
+          intersections TEXT,
+          stories TEXT,
+          first_meet_date TEXT,
+          notes TEXT,
+          avoid TEXT,
+          active TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TRIGGER IF NOT EXISTS update_person_relations_timestamp
+      AFTER UPDATE ON person_relations
+      FOR EACH ROW
+      BEGIN
+          UPDATE person_relations SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+      END;
+      ALTER TABLE person_relations ADD COLUMN avoid TEXT;
+      ALTER TABLE person_relations ADD COLUMN active TEXT;
+    `, (err) => {
+      if (err) {
+        console.error('创建表失败:', err.message);
+      } else {
+        console.log('person_relations表已创建或已存在');
       }
     });
   });

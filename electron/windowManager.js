@@ -19,7 +19,6 @@ class WindowManager {
       this.windows.delete(name)
       this.windowData.delete(name)
     })
-    
     return win
   }
 
@@ -51,6 +50,16 @@ class WindowManager {
       }
     }
     return null
+  }
+
+  hide(name) {
+    const win = this.getWindow(name)
+    if (win) win.hide()
+  }
+
+  show(name) {
+    const win = this.getWindow(name)
+    if(win) win.show()
   }
 }
 

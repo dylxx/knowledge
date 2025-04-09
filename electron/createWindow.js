@@ -7,7 +7,7 @@ import { windowManager } from "./windowManager.js";
 let tray
 let isHidden = false;
 let win
-const createWindow = () => {
+const createWindow = (reboot) => {
   const {x,y} = getWindowBounds()
   console.log(path.join(_rootPath,'resources', 'dist', 'no.ico'));
   const options = {
@@ -24,6 +24,7 @@ const createWindow = () => {
       nodeIntegration: true,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.cjs'),
+      permissions: ['clipboard-write', 'clipboard-read'],
       devTools: true
     }
   }
@@ -39,37 +40,11 @@ const createWindow = () => {
     // win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
   
-  tray = new Tray(path.join(_assetsDir, 'no.ico'));
-  tray.setToolTip('note');
+  // 首次创建窗口时创建小图标
+  if (!reboot) {
+    setTrayAndMenu()
+  }
 
-  // 设置托盘右键菜单
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: '显示窗口',
-      click: () => {
-        win.show();
-        isHidden = false;
-      }
-    },
-    {
-      label: '退出',
-      click: () => {
-        app.quit(); // 退出应用
-      }
-    }
-  ]);
-  tray.setContextMenu(contextMenu);
-
-  // 监听双击托盘图标，显示/隐藏窗口
-  tray.on('double-click', () => {
-    if (isHidden) {
-      win.show();
-      isHidden = false;
-    } else {
-      win.hide();
-      isHidden = true;
-    }
-  });
   // win.setSkipTaskbar(true) // 隐藏任务栏图标
   globalShortcut.register('Control+Shift+I', () => {
     win.webContents.openDevTools();
@@ -131,6 +106,46 @@ const createWindow = () => {
   }
   // 记录窗口关闭的位置
   win.on('close', saveWindowBounds)
+}
+
+function setTrayAndMenu() {
+  tray = new Tray(path.join(_assetsDir, 'no.ico'));
+  tray.setToolTip('note');
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示窗口',
+      click: () => {
+        win = windowManager.getWindow('mainWin')
+        if (win) {
+          win.show()
+          isHidden = false;
+        } else {
+          win = createWindow(true)
+        }
+        isHidden = false;
+      }
+    },
+    {
+      label: '退出',
+      click: () => {
+        app.quit(); // 退出应用
+      }
+    }
+  ]);
+  tray.setContextMenu(contextMenu);
+  // 监听双击托盘图标，显示/隐藏窗口
+  tray.on('double-click', () => {
+    win = windowManager.getWindow('mainWin')
+    if (!win) {
+      win = createWindow(true)
+    } else if (isHidden) {
+      win.show();
+      isHidden = false;
+    } else {
+      win.hide();
+      isHidden = true;
+    }
+  });
 }
 
 export {createWindow}

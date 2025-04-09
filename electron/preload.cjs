@@ -59,7 +59,8 @@ contextBridge.exposeInMainWorld('electron', {
   createShotWindow: (params) => ipcRenderer.invoke('createShotWindow', params),
   copyFile: (params) => ipcRenderer.invoke('copyFile', params),
   delFile: (params) => ipcRenderer.invoke('delFile', params),
-  camWindowHandle: (params) => ipcRenderer.invoke('camWindowHandle', params)
+  camWindowHandle: (params) => ipcRenderer.invoke('camWindowHandle', params),
+  savePersonRel: (params) => ipcRenderer.invoke('savePersonRel', params)
 });
 
 window.addEventListener('DOMContentLoaded', () => {
