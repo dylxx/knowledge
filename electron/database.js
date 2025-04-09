@@ -134,111 +134,150 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 // 初始化数据库（如果表不存在则创建）
-function initDB() {
-  db.serialize(() => {
-    db.run(`
-      CREATE TABLE IF NOT EXISTS notes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uuid TEXT NOT NULL,
-        title TEXT,
-        content TEXT,
-        groupuuid TEXT,
-        createtime TEXT
-      )
-    `, (err) => {
-      if (err) {
-        console.error('创建表失败:', err.message);
-      } else {
-        console.log('note表已创建或已存在');
-      }
-    });
-    db.run(`
-      CREATE TABLE IF NOT EXISTS groups (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uuid TEXT NOT NULL,
-        name TEXT,
-        createtime TEXT
-      )
-    `, (err) => {
-      if (err) {
-        console.error('创建表失败:', err.message);
-      } else {
-        console.log('group表已创建或已存在');
-      }
-    });
-    db.run(`
-      CREATE TABLE IF NOT EXISTS tomato (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uuid TEXT NOT NULL,
-        name TEXT,
-        createtime TEXT,
-        minute INTEGER
-      )
-    `, (err) => {
-      if (err) {
-        console.error('创建表失败:', err.message);
-      } else {
-        console.log('tomato表已创建或已存在');
-      }
-    });
-    db.run(`
-      CREATE TABLE IF NOT EXISTS userpwd (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uuid TEXT NOT NULL,
-        username TEXT,
-        name TEXT,
-        createtime TEXT,
-        password TEXT,
-        email TEXT,
-        remark TEXT,
-        phonenumber TEXT
-      )
-    `, (err) => {
-      if (err) {
-        console.error('创建表失败:', err.message);
-      } else {
-        console.log('userpwd表已创建或已存在');
-      }
-    });
+class DatabaseInitializer {
+  constructor(dbPath) {
+    this.dbPath = dbPath || path.join(app.getPath('userData'), 'app-database.db');
+    this.db = new sqlite3.Database(this.dbPath);
+  }
 
-    db.run(`
-      CREATE TABLE IF NOT EXISTS person_relations (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          uuid TEXT NOT NULL UNIQUE,
-          name TEXT NOT NULL,
-          gender TEXT,
-          birth_date TEXT,
-          location TEXT,
-          relationship TEXT,
-          contact_info TEXT,
-          mbti_type TEXT,
-          likes TEXT,
-          dislikes TEXT,
-          intersections TEXT,
-          stories TEXT,
-          first_meet_date TEXT,
-          notes TEXT,
-          avoid TEXT,
-          active TEXT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-      CREATE TRIGGER IF NOT EXISTS update_person_relations_timestamp
-      AFTER UPDATE ON person_relations
-      FOR EACH ROW
-      BEGIN
-          UPDATE person_relations SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-      END;
-      ALTER TABLE person_relations ADD COLUMN avoid TEXT;
-      ALTER TABLE person_relations ADD COLUMN active TEXT;
-    `, (err) => {
-      if (err) {
-        console.error('创建表失败:', err.message);
-      } else {
-        console.log('person_relations表已创建或已存在');
+  async initialize() {
+    try {
+      try {
+        await this.createTables();
+        console.log('数据库初始化完成');
+      } catch (error) {
+        console.error('数据库初始化失败:', error);
+        throw error;
       }
+    } finally {
+      this.db.close();
+    }
+  }
+
+  createTables() {
+    const tables = [
+      {
+        name: 'notes',
+        schema: `
+          CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL,
+            title TEXT,
+            content TEXT,
+            groupuuid TEXT,
+            createtime TEXT
+          )`
+      },
+      {
+        name: 'groups',
+        schema: `
+          CREATE TABLE IF NOT EXISTS groups (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL,
+            name TEXT,
+            createtime TEXT
+          )`
+      },
+      {
+        name: 'tomato',
+        schema: `
+          CREATE TABLE IF NOT EXISTS tomato (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL,
+            name TEXT,
+            createtime TEXT,
+            minute INTEGER
+          )`
+      },
+      {
+        name: 'userpwd',
+        schema: `
+          CREATE TABLE IF NOT EXISTS userpwd (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL,
+            username TEXT,
+            name TEXT,
+            createtime TEXT,
+            password TEXT,
+            email TEXT,
+            remark TEXT,
+            phonenumber TEXT
+          )`
+      },
+      {
+        name: 'person_relations',
+        schema: `
+          CREATE TABLE IF NOT EXISTS person_relations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            gender TEXT,
+            birth_date TEXT,
+            location TEXT,
+            relationship TEXT,
+            contact_info TEXT,
+            mbti_type TEXT,
+            likes TEXT,
+            dislikes TEXT,
+            intersections TEXT,
+            stories TEXT,
+            first_meet_date TEXT,
+            notes TEXT,
+            avoid TEXT,
+            active TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )`,
+        triggers: [
+          `CREATE TRIGGER IF NOT EXISTS update_person_relations_timestamp
+          AFTER UPDATE ON person_relations
+          FOR EACH ROW
+          BEGIN
+              UPDATE person_relations SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+          END`
+        ]
+      }
+    ];
+
+    // 顺序执行所有表创建
+    return tables.reduce((chain, table) => {
+      return chain.then(() => {
+        return this.executeQuery(table.schema, table.name)
+          .then(() => {
+            if (table.triggers) {
+              // 顺序执行当前表的所有触发器
+              return table.triggers.reduce(async (triggerChain, trigger) => {
+                await triggerChain;
+                return await this.executeQuery(trigger, `${table.name} trigger`);
+              }, Promise.resolve());
+            }
+          });
+      });
+    }, Promise.resolve());
+  }
+
+  executeQuery(query, operationName) {
+    return new Promise((resolve, reject) => {
+      this.db.run(query, (err) => {
+        if (err) {
+          console.error(`创建 ${operationName} 失败:`, err.message);
+          reject(err);
+        } else {
+          console.log(`${operationName} 已创建或已存在`);
+          resolve();
+        }
+      });
     });
-  });
+  }
+}
+// 使用示例
+async function initDB() {
+  const initializer = new DatabaseInitializer();
+  try {
+    return await initializer.initialize();
+  } catch (error) {
+    console.error('数据库初始化过程中发生错误:', error);
+  }
 }
 
 function getDb(name, params) {

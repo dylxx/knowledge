@@ -16,13 +16,15 @@
     <div class="person-list">
       <a-list size="small" :data-source="personList" class="scroll">
         <template #renderItem="{ item }">
-          <a-list-item class="person-item" :class="{'color-3':selPersonId===item.id}" @click="personItemCli(item) ">{{ item.name }}</a-list-item>
+          <a-list-item class="person-item" :class="{'sel-item':selPersonId===item.id}" @click="personItemCli(item) ">{{ item.name }}</a-list-item>
         </template>
       </a-list>
     </div>
     <div class="person-content">
       <div class="edit-top">
-        <div style="width: 4em"><a-input class="edit-input" size="small" v-model:value="editPerson.name" placeholder="姓名" spellcheck="false"></a-input></div>
+        <div style="width: 4em;display: flex">
+          <a-input class="edit-name-input"  size="small" v-model:value="editPerson.name" placeholder="姓名" spellcheck="false"></a-input>
+        </div>
         <div class="page-navi">
           <span class="cursor-default hoverActive" :class="{'active-blue':currPage ==='base'}" @click="currPage='base'"><AimOutlined/></span>
           <LineOutlined/>
@@ -33,23 +35,25 @@
           <span class="cursor-default hoverActive" :class="{'active-blue':currPage ==='result'}" @click="currPage='result'"><AimOutlined/></span>
         </div>
         <div>
-          <HeartOutlined v-show="editPerson.uuid" class="hoverActive" @click="savePersonRel"/>
+          <SaveOutlined v-show="editPerson.uuid" class="hoverActive" @click="savePersonRel"/>
           <PlusCircleOutlined v-show="!editPerson.uuid"  class="hoverActive"  @click="savePersonRel"/>
-          <!-- <a-button class="save-btn" size="small" @click="savePersonRel">{{ editPerson.uuid? '保存':'添加' }}</a-button> -->
+        </div>
+        <div>
+          <ClearOutlined class="hoverActive" @click="clearEditContent" />
         </div>
       </div>
       <div v-show="currPage==='base'" class="edit-content">
         <div class="edit-col">
           <!-- 性别 -->
-          <div class="edit-item" style="width: 2em">
-            <a-tooltip placement="right" trigger="click" :visible="genderSelTooltipShow" :overlayInnerStyle="{ fontSize: '0.8em', padding: '4px 8px' }">
+          <div class="edit-item " style="width: 3em">
+            <a-tooltip placement="right" trigger="click" :open="genderSelTooltipShow" :overlayInnerStyle="{ fontSize: '0.8em', padding: '4px 8px' }">
               <template #title>
-                <a-radio-group v-model:value="editPerson.gender" name="radioGroup">
-                  <a-radio value="男" style="color: white;font-size: small" @click="genderSelTooltipShow = false">男</a-radio>
-                  <a-radio value="女" style="color: white;font-size: small" @click="genderSelTooltipShow = false">女</a-radio>
+                <a-radio-group v-model:value="editPerson.gender" name="radioGroup" @change="genderSelTooltipShow=false">
+                  <a-radio value="男" style="color: white;font-size: small">男</a-radio>
+                  <a-radio value="女" style="color: white;font-size: small">女</a-radio>
                 </a-radio-group>
               </template>
-              <a-input class="edit-input" size="small" v-model:value="editPerson.gender" @blur="genderSelTooltipShow=false" @click="genderSelTooltipShow=true" placeholder="性别"></a-input>
+              <a-input class="edit-input cursor-default" size="small" v-model:value="editPerson.gender" @blur="genderInputBlur" @click="genderSelTooltipShow=true" placeholder="性别"></a-input>
             </a-tooltip>
           </div>
           <!-- 关系 -->
@@ -84,15 +88,15 @@
                 <span class="cursor-default" @wheel="wheelBirthTime($event, 1, [1,12])">{{`/${String(editBirth[1]).padStart(2, '0')}`}}</span>
                 <span class="cursor-default" @wheel="wheelBirthTime($event, 2, [1,31])">{{`/${String(editBirth[2]).padStart(2, '0')}`}}</span>
               </template>
-              <a-input class="edit-input" size="small" v-model:value="editPerson.birth_date" @blur="setBirthToEdit()" @click="birthInputCli" placeholder="生日"></a-input>
+              <a-input class="edit-input cursor-default" size="small" v-model:value="editPerson.birth_date" @blur="setBirthToEdit()" @click="birthInputCli" placeholder="出生日期"></a-input>
             </a-tooltip>
           </div>
         </div>
         <div class="edit-col">
           <!-- 年龄/类型/地址 -->
-          <div class="edit-item" style="width: 2em"><a-input class="edit-input" size="small" :value="editAge" placeholder="年龄"></a-input></div>
-          <div class="edit-item" style="width: 3em"><a-input class="edit-input" size="small" v-model:value="editPerson.mbti_type" placeholder="类型" ref="mbtiInput" @blur="mbtiInputBlur"></a-input></div>
-          <div class="edit-item" style="width: 9em"><a-input class="edit-input" size="small" v-model:value="editPerson.location" placeholder="地址"></a-input></div>
+          <div class="edit-item" style="width: 3em"><a-input class="edit-input cursor-default" size="small" :value="editAge" placeholder="年龄"></a-input><span></span></div>
+          <div class="edit-item" style="width: 3em"><a-input class="edit-input cursor-default" size="small" v-model:value="editPerson.mbti_type" placeholder="类型" ref="mbtiInput" @blur="mbtiInputBlur"></a-input></div>
+          <div class="edit-item" style="width: 8em"><a-input class="edit-input" size="small" v-model:value="editPerson.location" placeholder="地址"></a-input></div>
         </div>
       </div>
       <!-- likes -->
@@ -126,12 +130,12 @@
       <div v-show="currPage==='result'" class="edit-content">
         <div class="edit-col">
           <div class="edit-item">
-            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.avoid" :bordered="false" placeholder="stories" />
+            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.avoid" :bordered="false" placeholder="avoid" />
           </div>
         </div>
         <div class="edit-col">
           <div class="edit-item">
-            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.active" :bordered="false" placeholder="intersections" />
+            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.active" :bordered="false" placeholder="active" />
           </div>
         </div>
       </div>
@@ -143,18 +147,18 @@
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount, computed } from "vue";
 import "../style/main.less";
 import NaviBar from "./module/NaviBar.vue";
-import { CaretDownOutlined,AimOutlined,LineOutlined,HeartOutlined,PlusCircleOutlined } from '@ant-design/icons-vue'
+import { CaretDownOutlined,AimOutlined,LineOutlined,SaveOutlined,PlusCircleOutlined,MinusCircleOutlined,ClearOutlined } from '@ant-design/icons-vue'
 
 // 数据
 const selPersonId = ref(-1)
-const currPage = ref('likes')
+const currPage = ref('base')
 const mbtiInput = ref(null)
 const genderSelTooltipShow = ref(false)
 const birthSelTooltipShow = ref(false)
 const relationExpandedKeys = ref([]);
 const relationSelectedKeys = ref([]);
 const relationshipSelTooltipShow = ref(false)
-const editBirth = ref([1990,1,1])
+const editBirth = ref([2000,6,15])
 const normalRelationTree = [
   {
     title: '家庭',
@@ -224,7 +228,7 @@ let editPerson = reactive({
   uuid:'',
   name:'',
   gender:'',
-  birth_date:'2025-01-02',
+  birth_date:'',
   location:'',
   relationship:'',
   contact_info:'',
@@ -241,6 +245,11 @@ let editPerson = reactive({
 const relationshipVisible = ref(false)
 let blurMbtiInput = false
 // 方法:
+const genderInputBlur = () => {
+  setTimeout(() => {
+    genderSelTooltipShow.value = false
+  }, 200);
+}
 const selTree = (keys, e) => {
   if (e.node && !e.node.children) {
     editPerson.relationship = e.node.key
@@ -295,12 +304,36 @@ const selMbti = async (mbti) => {
   }
 }
 const savePersonRel = async () => {
+  if (!editPerson.name) {
+    return
+  }
   console.log(editPerson);
   await window.electron.savePersonRel({...editPerson})
   getPersonRelList()
 }
+const clearEditContent = () => {
+  editPerson.id = 0
+  editPerson.uuid = ''
+  editPerson.name = ''
+  editPerson.gender = ''
+  editPerson.birth_date = ''
+  editPerson.location = ''
+  editPerson.relationship = ''
+  editPerson.contact_info = ''
+  editPerson.mbti_type = ''
+  editPerson.likes = ''
+  editPerson.dislikes = ''
+  editPerson.intersections = ''
+  editPerson.stories = ''
+  editPerson.first_meet_date = ''
+  editPerson.notes = ''
+  editPerson.avoid = ''
+  editPerson.active = ''
+}
 const personItemCli = (item) => {
   selPersonId.value = item.id
+  console.log(444,selPersonId.value, item.id );
+  
   editPerson.id = item.id
   editPerson.uuid = item.uuid
   editPerson.name = item.name
@@ -328,14 +361,14 @@ const editAge = computed(() => {
   if (!editPerson.birth_date) return null
   const year = new Date().getFullYear()
   const birthYear = editPerson.birth_date.split('-')[0]
-  return Number(year) - Number(birthYear)
+  return (Number(year) - Number(birthYear))+'岁'
 })
 onBeforeUnmount(() => {
 });
 
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(() => {
-  window.electron.resizeWindow([375,157])
+  window.electron.resizeWindow([420,157])
   getPersonRelList()
 })
 
@@ -349,7 +382,7 @@ onMounted(() => {
 .mbti-content {
   margin: 5px;
   padding: 5px;
-  width: 20%;
+  width: 15%;
   height: 100%;
   background-color: rgb(231, 244, 255);
   display: grid; //定义网格布局
@@ -360,7 +393,7 @@ onMounted(() => {
   gap: 5px; // 间距
   .mbti-item { // 子元素div
     background-color: rgb(183, 223, 255);
-    border-radius: 10%;
+    border-radius: 3px;
     &:hover {
       background-color: rgb(137, 202, 255);
       cursor: default;
@@ -380,12 +413,13 @@ onMounted(() => {
   }
 }
 .person-list {
+  width: 20%;
   margin: 5px 0;
-  height: 100%;
+  height: 8%;
   background-color: rgb(255, 244, 228);
   .person-item {
     background-color: rgb(255, 235, 205);
-    border-radius: 10%;
+    border-radius: 3px;
     padding: 3px;
     margin: 4px;
     cursor: default;
@@ -393,14 +427,19 @@ onMounted(() => {
       background-color: rgb(255, 226, 182);
     }
   }
+  .sel-item {
+    background-color: rgb(255, 226, 182);
+  }
 }
 .person-content {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  width: 65%;
+  min-width: 235px;
   margin: 5px 5px;
-  background-color: rgb(245, 236, 255);
+  background-color: #ccdeff;
   .edit-top {
+    border-radius: 3px;
     display: flex;
     flex-direction: row;
     justify-content: space-around;
@@ -409,7 +448,6 @@ onMounted(() => {
   }
 }
 .page-navi {
-  background-color: rgb(236, 219, 255);
   border-radius: 10%;
   padding: 0 3px;
   margin: auto 3px;
@@ -421,10 +459,22 @@ onMounted(() => {
 .edit-input {
   border: none;
   width: 100%;
-  background-color: rgb(236, 219, 255);
+  background-color: rgb(255, 255, 255);
   min-width: 2.5em;
   // max-width: 7em;
-  border-radius: 10%;
+  border-radius: 3px;
+  margin-left: 0;
+  &:focus{
+    outline: none;
+    box-shadow: none;
+  }
+}
+.edit-name-input {
+  border: none;
+  width: 100%;
+  min-width: 2.5em;
+  // max-width: 7em;
+  border-radius: 3px;
   margin-left: 0;
   &:focus{
     outline: none;
@@ -432,9 +482,11 @@ onMounted(() => {
   }
 }
 .edit-content {
+  height: 100%;
   background-color: rgb(239, 233, 255);
   display: flex;
   .edit-col {
+    width: 50%;
     margin: 5px;
     .edit-item {
       margin: 0 auto 3px 0;
@@ -457,8 +509,5 @@ onMounted(() => {
     width: 0px;  /* 隐藏垂直滚动条 */
     height: 0px;  /* 隐藏水平滚动条 */
   }
-}
-.sel-item {
-  background-color: rgb(255, 226, 182);
 }
 </style>
