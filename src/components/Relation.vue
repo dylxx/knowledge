@@ -10,7 +10,7 @@
             {{ mbti.content }}
           </span>
         </template>
-        <div class="mbti-item" :class="{'mbti-sel':editPerson.mbti_type.includes(mbti.name)}" @click="selMbti(mbti)">{{ mbti.name }}</div>
+        <div class="mbti-item" :class="{'mbti-sel':editPerson.mbti_type.includes(mbti.name)}" @click="selMbti(mbti)"><span>{{ mbti.name }}</span></div>
       </a-tooltip>
     </div>
     <div class="person-list">
@@ -26,13 +26,13 @@
           <a-input class="edit-name-input"  size="small" v-model:value="editPerson.name" placeholder="姓名" spellcheck="false"></a-input>
         </div>
         <div class="page-navi">
-          <span class="cursor-default hoverActive" :class="{'active-blue':currPage ==='base'}" @click="currPage='base'"><AimOutlined/></span>
+          <span class="cursor-default hoverActive" :class="{'active-blue':currPage.page1 ==='base'}" @click="currPage.page1='base'"><AimOutlined/></span>
           <LineOutlined/>
-          <span class="cursor-default hoverActive" :class="{'active-blue':currPage ==='likes'}" @click="currPage='likes'"><AimOutlined/></span>
+          <span class="cursor-default hoverActive" :class="{'active-blue':currPage.page1 ==='other'}" @click="currPage.page1='other'"><AimOutlined/></span>
           <LineOutlined/>
-          <span class="cursor-default hoverActive" :class="{'active-blue':currPage ==='stories'}" @click="currPage='stories'"><AimOutlined/></span>
-          <LineOutlined/>
-          <span class="cursor-default hoverActive" :class="{'active-blue':currPage ==='result'}" @click="currPage='result'"><AimOutlined/></span>
+          <span class="cursor-default hoverActive" :class="{'active-blue':currPage.page1 ==='mbti'}" @click="currPage.page1='mbti'"><AimOutlined/></span>
+          <!-- <LineOutlined/> -->
+          <!-- <span class="cursor-default hoverActive" :class="{'active-blue':currPage.page1 ==='result'}" @click="currPage.page1='result'"><AimOutlined/></span> -->
         </div>
         <div>
           <SaveOutlined v-show="editPerson.uuid" class="hoverActive" @click="savePersonRel"/>
@@ -41,11 +41,14 @@
         <div>
           <ClearOutlined class="hoverActive" @click="clearEditContent" />
         </div>
+        <div>
+          <DeleteOutlined v-show="editPerson.uuid" class="hoverActive" @click="deletePersonRel"  />
+        </div>
       </div>
-      <div v-show="currPage==='base'" class="edit-content">
+      <div v-show="currPage.page1==='base'" class="edit-content">
         <div class="edit-col">
           <!-- 性别 -->
-          <div class="edit-item " style="width: 3em">
+          <div class=" " style="width: 3em">
             <a-tooltip placement="right" trigger="click" :open="genderSelTooltipShow" :overlayInnerStyle="{ fontSize: '0.8em', padding: '4px 8px' }">
               <template #title>
                 <a-radio-group v-model:value="editPerson.gender" name="radioGroup" @change="genderSelTooltipShow=false">
@@ -57,7 +60,7 @@
             </a-tooltip>
           </div>
           <!-- 关系 -->
-          <div class="edit-item" style="width: 3em">
+          <div  style="width: 3em">
             <a-tooltip class="tool-item">
               <a-popover trigger="click" v-model:open="relationshipVisible" placement="right">
                 <template #content >
@@ -81,7 +84,7 @@
             </a-tooltip>
           </div>
           <!-- 出生 --> 
-          <div class="edit-item" style="width: 5.3em">
+          <div  style="width: 5.3em">
             <a-tooltip placement="right" trigger="click" :visible="birthSelTooltipShow" :overlayInnerStyle="{ padding: '4px 8px' }">
               <template #title>
                 <span class="cursor-default" @wheel="wheelBirthTime($event, 0)">{{editBirth[0]}}</span>
@@ -94,49 +97,47 @@
         </div>
         <div class="edit-col">
           <!-- 年龄/类型/地址 -->
-          <div class="edit-item" style="width: 3em"><a-input class="edit-input cursor-default" size="small" :value="editAge" placeholder="年龄"></a-input><span></span></div>
-          <div class="edit-item" style="width: 3em"><a-input class="edit-input cursor-default" size="small" v-model:value="editPerson.mbti_type" placeholder="类型" ref="mbtiInput" @blur="mbtiInputBlur"></a-input></div>
-          <div class="edit-item" style="width: 8em"><a-input class="edit-input" size="small" v-model:value="editPerson.location" placeholder="地址"></a-input></div>
+          <div  style="width: 3em"><a-input class="edit-input cursor-default" size="small" :value="editAge" placeholder="年龄"></a-input></div>
+          <div  style="width: 3em"><a-input class="edit-input cursor-default" size="small" v-model:value="editPerson.mbti_type" placeholder="类型" ref="mbtiInput" @blur="mbtiInputBlur"></a-input></div>
+          <div  style="width: 8em"><a-input class="edit-input" size="small" v-model:value="editPerson.location" placeholder="地址"></a-input></div>
         </div>
       </div>
       <!-- likes -->
-      <div v-show="currPage==='likes'" class="edit-content">
-        <div class="edit-col">
-          <div class="edit-item">
-            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.likes" :bordered="false" placeholder="likes" />
+      <div v-show="currPage.page1==='other'" class="edit-content">
+        <div class="edit-col" style="width: 20%">
+          <div v-for="(rowItem, index) in page2Item" class="edit-row" :key="index">
+            <div
+              v-for="(item, index2) in rowItem"
+              :key="index2"
+              class=" page2-item"
+              :class="{'active-page2-item':currPage.page2===item.key || currPage.page2Lock.page === item.key}" 
+              @mouseleave="leaveChangePage2(item.key)" 
+              @mouseenter="hoverChangePage2(item.key)" 
+              @click="changePage2(item.key)"
+              >
+              <span>{{ item.title }}</span>
+            </div>
           </div>
-
         </div>
-        <div class="edit-col">
-          <div class="edit-item">
-            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.dislikes" :bordered="false" placeholder="dislikes" />
+        <div class="edit-col" style="width: 80%">
+          <div >
+            <a-textarea v-show="currPage.page2==='likes'" class="textarea-part" :rows="4" v-model:value="editPerson.likes" :bordered="false" placeholder="likes" />
+            <a-textarea v-show="currPage.page2==='dislikes'" class="textarea-part" :rows="4" v-model:value="editPerson.dislikes" :bordered="false" placeholder="dislikes" />
+            <a-textarea v-show="currPage.page2==='stories'" class="textarea-part" :rows="4" v-model:value="editPerson.stories" :bordered="false" placeholder="stories" />
+            <a-textarea v-show="currPage.page2==='intersections'" class="textarea-part" :rows="4" v-model:value="editPerson.intersections" :bordered="false" placeholder="intersections" />
+            <a-textarea v-show="currPage.page2==='avoid'" class="textarea-part" :rows="4" v-model:value="editPerson.avoid" :bordered="false" placeholder="avoid" />
+            <a-textarea v-show="currPage.page2==='active'" class="textarea-part" :rows="4" v-model:value="editPerson.active" :bordered="false" placeholder="active" />
           </div>
         </div>
       </div>
-      <!-- stories -->
-      <div v-show="currPage==='stories'" class="edit-content">
-        <div class="edit-col">
-          <div class="edit-item">
-            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.stories" :bordered="false" placeholder="stories" />
-          </div>
-        </div>
-        <div class="edit-col">
-          <div class="edit-item">
-            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.intersections" :bordered="false" placeholder="intersections" />
-          </div>
-        </div>
-      </div>
-      <!--  -->
-      <div v-show="currPage==='result'" class="edit-content">
-        <div class="edit-col">
-          <div class="edit-item">
-            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.avoid" :bordered="false" placeholder="avoid" />
-          </div>
-        </div>
-        <div class="edit-col">
-          <div class="edit-item">
-            <a-textarea class="textarea-part" :rows="4" v-model:value="editPerson.active" :bordered="false" placeholder="active" />
-          </div>
+      <div v-show="currPage.page1==='mbti'" class="edit-content">
+        <div class="edit-col" style="width: 100%">
+          <div class="mbti-desc">
+            <div style="font-weight: 600">{{ mbtiInfo[editPerson.mbti_type]?.name }}</div>
+            <div style="text-indent: 1em">{{ mbtiInfo[editPerson.mbti_type]?.traits }}</div>
+            <div style="text-indent: 1em;color: #ff6363">{{ mbtiInfo[editPerson.mbti_type]?.interaction_tips }}</div>
+            <!-- <a-textarea class="textarea-part" :rows="4" :value="mbtiDesc" :bordered="false" placeholder="mbti描述" /> -->
+           </div>
         </div>
       </div>
     </div>
@@ -147,11 +148,21 @@
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount, computed } from "vue";
 import "../style/main.less";
 import NaviBar from "./module/NaviBar.vue";
-import { CaretDownOutlined,AimOutlined,LineOutlined,SaveOutlined,PlusCircleOutlined,MinusCircleOutlined,ClearOutlined } from '@ant-design/icons-vue'
+import utils from "../js/utils";
+import { CaretDownOutlined,AimOutlined,LineOutlined,SaveOutlined,PlusCircleOutlined,MinusCircleOutlined,ClearOutlined,DeleteOutlined } from '@ant-design/icons-vue'
 
 // 数据
 const selPersonId = ref(-1)
-const currPage = ref('base')
+const currPage = reactive({
+  page1: 'base',
+  page2: 'likes',
+  page2Lock: {lock: false, page: ''}
+})
+const page2Item = [
+  [{key: 'likes', title: '喜'}, {key: 'dislikes', title: '厌'}],
+  [{key: 'stories', title: '事'}, {key: 'intersections', title: '交'}],
+  [{key: 'avoid', title: '避'}, {key: 'active', title: '先'}],
+]
 const mbtiInput = ref(null)
 const genderSelTooltipShow = ref(false)
 const birthSelTooltipShow = ref(false)
@@ -242,6 +253,7 @@ let editPerson = reactive({
   avoid:'',
   active:''
 })
+const mbtiInfo = ref({})
 const relationshipVisible = ref(false)
 let blurMbtiInput = false
 // 方法:
@@ -308,10 +320,39 @@ const savePersonRel = async () => {
     return
   }
   console.log(editPerson);
-  await window.electron.savePersonRel({...editPerson})
-  getPersonRelList()
+  const result = await window.electron.savePersonRel({...editPerson})
+  await getPersonRelList()
+  if (result.uuid) {
+    const person = personList.value.find(item => item.uuid === result.uuid)
+    resetEditContent(person)
+  }
 }
 const clearEditContent = () => {
+  selPersonId.value = -1
+  resetEditContent()
+}
+
+const resetEditContent = (item) => {
+  if (item) {
+    editPerson.id = item.id
+    editPerson.uuid = item.uuid
+    editPerson.name = item.name
+    editPerson.gender = item.gender
+    editPerson.birth_date = item.birth_date
+    editPerson.location = item.location
+    editPerson.relationship = item.relationship
+    editPerson.contact_info = item.contact_info
+    editPerson.mbti_type = item.mbti_type
+    editPerson.likes = item.likes
+    editPerson.dislikes = item.dislikes
+    editPerson.intersections = item.intersections
+    editPerson.stories = item.stories
+    editPerson.first_meet_date = item.first_meet_date
+    editPerson.notes = item.notes
+    editPerson.avoid = item.avoid
+    editPerson.active = item.active
+    return
+  }
   editPerson.id = 0
   editPerson.uuid = ''
   editPerson.name = ''
@@ -330,27 +371,15 @@ const clearEditContent = () => {
   editPerson.avoid = ''
   editPerson.active = ''
 }
+const deletePersonRel = async () => {
+  await window.electron.deletePersonRel(editPerson.uuid)
+  getPersonRelList()
+  resetEditContent()
+}
 const personItemCli = (item) => {
   selPersonId.value = item.id
   console.log(444,selPersonId.value, item.id );
-  
-  editPerson.id = item.id
-  editPerson.uuid = item.uuid
-  editPerson.name = item.name
-  editPerson.gender = item.gender
-  editPerson.birth_date = item.birth_date
-  editPerson.location = item.location
-  editPerson.relationship = item.relationship
-  editPerson.contact_info = item.contact_info
-  editPerson.mbti_type = item.mbti_type
-  editPerson.likes = item.likes
-  editPerson.dislikes = item.dislikes
-  editPerson.intersections = item.intersections
-  editPerson.stories = item.stories
-  editPerson.first_meet_date = item.first_meet_date
-  editPerson.notes = item.notes
-  editPerson.avoid = item.avoid
-  editPerson.active = item.active
+  resetEditContent(item)
 }
 const getPersonRelList = async () => {
   const list = await window.electron.search({name:'getPersonRelList'})
@@ -363,19 +392,52 @@ const editAge = computed(() => {
   const birthYear = editPerson.birth_date.split('-')[0]
   return (Number(year) - Number(birthYear))+'岁'
 })
+const mbtiDesc = computed(() => {
+  if (!editPerson.mbti_type) return null
+  const info = mbtiInfo.value[editPerson.mbti_type]
+  if (!info) return null
+  return `${info.name}/n/t${info.traits}/n${info.interaction_tips}`
+})
+const changePage2 = (page) => {
+  const lock = currPage.page2Lock.lock
+  const lockPage = currPage.page2Lock.page
+  if (lock && page === lockPage) {
+    currPage.page2Lock.lock = false
+    currPage.page2Lock.page = ''
+  } else if (lock && page !== lockPage) {
+    currPage.page2Lock.page = page
+  } else if (!lock) {
+    currPage.page2Lock.lock = true
+    currPage.page2Lock.page = page
+  }
+  currPage.page2 = page
+}
+const hoverChangePage2 = (page) => {
+  currPage.page2 = page
+  if(!currPage.page2Lock.lock) {
+    currPage.page2 = page
+  }
+}
+const leaveChangePage2 = (page) => {
+  if (currPage.page2Lock.lock) {
+    currPage.page2 = currPage.page2Lock.page
+  }
+}
 onBeforeUnmount(() => {
 });
 
 // 使用 ResizeObserver 来监听元素的尺寸变化
 onMounted(() => {
-  window.electron.resizeWindow([420,157])
+  window.electron.resizeWindow([420,180])
   getPersonRelList()
+  mbtiInfo.value = utils.getMbtiInfo()
 })
 
 </script>
 
 <style scoped  lang="less">
 .content-main {
+  height: 150px;
   margin: 0 5px 5px 5px;
   display: flex;
 }
@@ -383,7 +445,6 @@ onMounted(() => {
   margin: 5px;
   padding: 5px;
   width: 15%;
-  height: 100%;
   background-color: rgb(231, 244, 255);
   display: grid; //定义网格布局
   grid-template-columns: 1fr  1fr; 
@@ -394,9 +455,13 @@ onMounted(() => {
   .mbti-item { // 子元素div
     background-color: rgb(183, 223, 255);
     border-radius: 3px;
+    display: flex;
     &:hover {
       background-color: rgb(137, 202, 255);
       cursor: default;
+    }
+    span {
+      margin: auto;
     }
   }
   .mbti-sel {
@@ -404,9 +469,8 @@ onMounted(() => {
   }
 }
 .scroll {
-  height: 118px;
+  height: 136px;
   overflow: auto;
-  background-color: rgb(255, 249, 242);
   &::-webkit-scrollbar {
     width: 0px;  /* 隐藏垂直滚动条 */
     height: 0px;  /* 隐藏水平滚动条 */
@@ -415,7 +479,6 @@ onMounted(() => {
 .person-list {
   width: 20%;
   margin: 5px 0;
-  height: 8%;
   background-color: rgb(255, 244, 228);
   .person-item {
     background-color: rgb(255, 235, 205);
@@ -488,8 +551,15 @@ onMounted(() => {
   .edit-col {
     width: 50%;
     margin: 5px;
-    .edit-item {
-      margin: 0 auto 3px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    .textarea-title {
+    }
+    .edit-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
     }
   }
 }
@@ -505,6 +575,31 @@ onMounted(() => {
   padding: 2px;
   resize: none;
   margin-right: 3px;
+  &::-webkit-scrollbar {
+    width: 0px;  /* 隐藏垂直滚动条 */
+    height: 0px;  /* 隐藏水平滚动条 */
+  }
+}
+.page2-item {
+  background-color: #ffffff;
+  border-radius: 2px;
+  padding: 0 3px;
+  cursor: default;
+  font-size: small;
+  &:hover {
+    background-color: #77b7ff;
+  }
+}
+.active-page2-item {
+  background-color: #77b7ff
+}
+.mbti-desc {
+  padding: 2px;
+  font-size: small;
+  text-align: left;
+  height: 96px;
+  overflow: auto;
+  background-color: white;
   &::-webkit-scrollbar {
     width: 0px;  /* 隐藏垂直滚动条 */
     height: 0px;  /* 隐藏水平滚动条 */

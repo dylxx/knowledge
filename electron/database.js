@@ -121,6 +121,12 @@ const sqls = {
     from person_relations
     order by id desc
     `
+  },
+  deletePersonRel: {
+    method: 'run',
+    sql: `
+    delete from person_relations where uuid=$uuid
+    `
   }
 }
 

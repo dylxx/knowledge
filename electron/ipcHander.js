@@ -581,6 +581,10 @@ const savePersonRel = async ($event, params) => {
   return newPersonRel
 }
 
+const deletePersonRel = async ($event, uuid) => {
+  await runDb('deletePersonRel', toParams({uuid}))
+}
+
 function setupIpcHandlers() {
   ipcMain.handle('resize-window', resizeWindow)
   ipcMain.handle('getUngroupNote',  getUngroupNote)
@@ -626,6 +630,7 @@ function setupIpcHandlers() {
   ipcMain.handle('save-temp-file', saveTempFile);
   ipcMain.on('ondragstart', ondragstart)
   ipcMain.handle('savePersonRel',savePersonRel)
+  ipcMain.handle('deletePersonRel',deletePersonRel)
 }
 
 export {setupIpcHandlers}
