@@ -1,9 +1,5 @@
 <template style="height: 200px">
-  <div class="drag" style="display: flex; justify-content: space-evenly;margin-top: 8px">
-    <LeftOutlined class="hoverActive no-drag" @click="gotoPre" />
-    <RollbackOutlined class="hoverActive no-drag" @click="backHome"/>
-    <RightOutlined class="hoverActive no-drag" @click="gotoNext"/>
-  </div>
+  <ToolBar></ToolBar>
   <div class="main-content">
     <div class="main-left ">
       <a-list class="typeList-main scoll" size="small" bordered :data-source="typeList" :split="false" style="border: none" :locale="{emptyText: ' '}">
@@ -65,6 +61,7 @@ import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
 import { getCurrentTime, toParams  } from "../js/utils";
 import "../style/main.less";
+import ToolBar from "./module/ToolBar.vue";
 
 // 数据
 const router = useRouter();

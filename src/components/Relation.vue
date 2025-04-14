@@ -1,5 +1,5 @@
 <template>
-  <NaviBar/>
+  <ToolBar/>
   <div class="content-main">
     <div class="mbti-content">
       <a-tooltip v-for="(mbti,index) in mbtiList" :key="index" placement="right" :overlayInnerStyle="{ fontSize: '0.8em', padding: '4px 8px' }">
@@ -14,11 +14,17 @@
       </a-tooltip>
     </div>
     <div class="person-list">
-      <a-list size="small" :data-source="personList" class="scroll">
-        <template #renderItem="{ item }">
-          <a-list-item class="person-item" :class="{'sel-item':selPersonId===item.id}" @click="personItemCli(item) ">{{ item.name }}</a-list-item>
-        </template>
-      </a-list>
+      <div class="scroll" ref="listRef">
+        <div 
+          v-for="item in personList" 
+          :key="item.id" 
+          class="person-item" 
+          :class="{'sel-item':selPersonId===item.id}" 
+          @click="personItemCli(item) "
+          style="font-size: small"
+          >{{ item.name }}
+        </div>
+      </div>
     </div>
     <div class="person-content">
       <div class="edit-top">
@@ -35,64 +41,66 @@
           <!-- <span class="cursor-default hoverActive" :class="{'active-blue':currPage.page1 ==='result'}" @click="currPage.page1='result'"><AimOutlined/></span> -->
         </div>
         <div>
-          <SaveOutlined v-show="editPerson.uuid" class="hoverActive" @click="savePersonRel"/>
-          <PlusCircleOutlined v-show="!editPerson.uuid"  class="hoverActive"  @click="savePersonRel"/>
+          <SaveOutlined v-show="editPerson.uuid" class="hoverActive" @click="savePersonRel" title="保存"/>
+          <PlusCircleOutlined v-show="!editPerson.uuid"  class="hoverActive"  @click="savePersonRel" title="添加"/>
         </div>
         <div>
-          <ClearOutlined class="hoverActive" @click="clearEditContent" />
+          <ClearOutlined class="hoverActive" @click="clearEditContent" title="清理" />
         </div>
         <div>
-          <DeleteOutlined v-show="editPerson.uuid" class="hoverActive" @click="deletePersonRel"  />
+          <DeleteOutlined v-show="editPerson.uuid" class="hoverActive" @click="deletePersonRel" title="删除" />
         </div>
       </div>
       <div v-show="currPage.page1==='base'" class="edit-content">
         <div class="edit-col">
           <!-- 性别 -->
-          <div class=" " style="width: 3em">
-            <a-tooltip placement="right" trigger="click" :open="genderSelTooltipShow" :overlayInnerStyle="{ fontSize: '0.8em', padding: '4px 8px' }">
-              <template #title>
+          <div style="width: 3em">
+            <a-popover style="font-size: small" placement="right" trigger="click" :open="genderSelTooltipShow" :overlayInnerStyle="{ fontSize: '0.8em', padding: '4px 8px' }">
+              <template #content>
                 <a-radio-group v-model:value="editPerson.gender" name="radioGroup" @change="genderSelTooltipShow=false">
-                  <a-radio value="男" style="color: white;font-size: small">男</a-radio>
-                  <a-radio value="女" style="color: white;font-size: small">女</a-radio>
+                  <a-radio value="男">男</a-radio>
+                  <a-radio value="女">女</a-radio>
                 </a-radio-group>
               </template>
               <a-input class="edit-input cursor-default" size="small" v-model:value="editPerson.gender" @blur="genderInputBlur" @click="genderSelTooltipShow=true" placeholder="性别"></a-input>
-            </a-tooltip>
+            </a-popover>
           </div>
           <!-- 关系 -->
           <div  style="width: 3em">
-            <a-tooltip class="tool-item">
-              <a-popover trigger="click" v-model:open="relationshipVisible" placement="right">
-                <template #content >
-                  <div style="height: 120px;margin: -6px">
-                    <a-tree
-                      class="scoll formatTree"
-                      v-model:selectedKeys="relationSelectedKeys"
-                      v-model:expandedKeys="relationExpandedKeys"
-                      :tree-data="normalRelationTree"
-                      size="small"
-                      @select="selTree"
-                    >
-                    <template #switcherIcon="{ switcherCls, key }">
-                      <CaretDownOutlined :class="switcherCls" @mouseenter="relationExpandedKeys=[key]"/>
-                    </template>
-                    </a-tree>
+            <a-popover class="tool-item" trigger="click" v-model:open="relationshipVisible" placement="right">
+              <template #content >
+                  <!-- <a-tree
+                    class="scoll formatTree"
+                    v-model:selectedKeys="relationSelectedKeys"
+                    v-model:expandedKeys="relationExpandedKeys"
+                    :tree-data="normalRelationTree"
+                    size="small"
+                    @select="selTree"
+                  >
+                  <template #switcherIcon="{ switcherCls, key }">
+                    <CaretDownOutlined :class="switcherCls" @mouseenter="relationExpandedKeys=[key]"/>
+                  </template>
+                  </a-tree> -->
+                  <div class="rel-sel" v-for="(relType, tIndex) in normalRelationTree" :key="tIndex">
+                    <span class="relation-sel-type">{{ relType.title }}</span>
+                    <div class="relation-sel-item-group" :scrollLeft="scrollLefts[tIndex]" @wheel="relSelScroll($event, tIndex)" :ref="el => { if (el) relSelScrollRefs[tIndex] = el }">
+                      <span class="relation-sel-item" :class="{'sel-relation-active':rel.key===editPerson.relationship}" v-for="(rel, index) in relType.children" :key="index" @click="selCoverType(rel.key)">{{ rel.title }}</span>
+                    </div>
                   </div>
-                </template>
-                <a-input class="edit-input" size="small" v-model:value="editPerson.relationship" placeholder="关系"></a-input>
-              </a-popover>
-            </a-tooltip>
+              </template>
+              <a-input class="edit-input" size="small" v-model:value="editPerson.relationship" placeholder="关系"></a-input>
+            </a-popover>
           </div>
           <!-- 出生 --> 
           <div  style="width: 5.3em">
-            <a-tooltip placement="right" trigger="click" :visible="birthSelTooltipShow" :overlayInnerStyle="{ padding: '4px 8px' }">
-              <template #title>
+            <a-popover placement="right" trigger="click" :visible="birthSelTooltipShow" :overlayInnerStyle="{ padding: '4px 8px' }">
+              <template #content>
                 <span class="cursor-default" @wheel="wheelBirthTime($event, 0)">{{editBirth[0]}}</span>
                 <span class="cursor-default" @wheel="wheelBirthTime($event, 1, [1,12])">{{`/${String(editBirth[1]).padStart(2, '0')}`}}</span>
                 <span class="cursor-default" @wheel="wheelBirthTime($event, 2, [1,31])">{{`/${String(editBirth[2]).padStart(2, '0')}`}}</span>
               </template>
               <a-input class="edit-input cursor-default" size="small" v-model:value="editPerson.birth_date" @blur="setBirthToEdit()" @click="birthInputCli" placeholder="出生日期"></a-input>
-            </a-tooltip>
+            </a-popover>
           </div>
         </div>
         <div class="edit-col">
@@ -121,12 +129,12 @@
         </div>
         <div class="edit-col" style="width: 80%">
           <div >
-            <a-textarea v-show="currPage.page2==='likes'" class="textarea-part" :rows="4" v-model:value="editPerson.likes" :bordered="false" placeholder="likes" />
-            <a-textarea v-show="currPage.page2==='dislikes'" class="textarea-part" :rows="4" v-model:value="editPerson.dislikes" :bordered="false" placeholder="dislikes" />
-            <a-textarea v-show="currPage.page2==='stories'" class="textarea-part" :rows="4" v-model:value="editPerson.stories" :bordered="false" placeholder="stories" />
-            <a-textarea v-show="currPage.page2==='intersections'" class="textarea-part" :rows="4" v-model:value="editPerson.intersections" :bordered="false" placeholder="intersections" />
-            <a-textarea v-show="currPage.page2==='avoid'" class="textarea-part" :rows="4" v-model:value="editPerson.avoid" :bordered="false" placeholder="avoid" />
-            <a-textarea v-show="currPage.page2==='active'" class="textarea-part" :rows="4" v-model:value="editPerson.active" :bordered="false" placeholder="active" />
+            <a-textarea v-show="currPage.page2==='likes'" class="textarea-part" :rows="5" v-model:value="editPerson.likes" :bordered="false" placeholder="likes" />
+            <a-textarea v-show="currPage.page2==='dislikes'" class="textarea-part" :rows="5" v-model:value="editPerson.dislikes" :bordered="false" placeholder="dislikes" />
+            <a-textarea v-show="currPage.page2==='stories'" class="textarea-part" :rows="5" v-model:value="editPerson.stories" :bordered="false" placeholder="stories" />
+            <a-textarea v-show="currPage.page2==='intersections'" class="textarea-part" :rows="5" v-model:value="editPerson.intersections" :bordered="false" placeholder="intersections" />
+            <a-textarea v-show="currPage.page2==='avoid'" class="textarea-part" :rows="5" v-model:value="editPerson.avoid" :bordered="false" placeholder="avoid" />
+            <a-textarea v-show="currPage.page2==='active'" class="textarea-part" :rows="5" v-model:value="editPerson.active" :bordered="false" placeholder="active" />
           </div>
         </div>
       </div>
@@ -147,12 +155,18 @@
 <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount, computed } from "vue";
 import "../style/main.less";
-import NaviBar from "./module/NaviBar.vue";
 import utils from "../js/utils";
+import Sortable from "sortablejs";
+import { message } from "ant-design-vue";
+import ToolBar from "./module/ToolBar.vue";
+import HorizontalScroll from "./module/HorizontalScroll.vue";
 import { CaretDownOutlined,AimOutlined,LineOutlined,SaveOutlined,PlusCircleOutlined,MinusCircleOutlined,ClearOutlined,DeleteOutlined } from '@ant-design/icons-vue'
 
 // 数据
+const scrollLefts = ref([0,0,0])
+const relSelScrollRefs = ref([])
 const selPersonId = ref(-1)
+const listRef = ref(null)
 const currPage = reactive({
   page1: 'base',
   page2: 'likes',
@@ -317,6 +331,7 @@ const selMbti = async (mbti) => {
 }
 const savePersonRel = async () => {
   if (!editPerson.name) {
+    message.error('请先写姓名')
     return
   }
   console.log(editPerson);
@@ -423,6 +438,15 @@ const leaveChangePage2 = (page) => {
     currPage.page2 = currPage.page2Lock.page
   }
 }
+const relSelScroll = (e, index) => {
+  // const leftList = scrollLefts.value
+  // leftList[index] = leftList[index] + e.deltaY*0.5
+  // scrollLefts.value = leftList
+  e.preventDefault();
+  if(!relSelScrollRefs.value[index]) return
+  const domRef = relSelScrollRefs.value[index]
+  domRef.scrollLeft = domRef.scrollLeft + e.deltaY*0.4
+}
 onBeforeUnmount(() => {
 });
 
@@ -431,6 +455,19 @@ onMounted(() => {
   window.electron.resizeWindow([420,180])
   getPersonRelList()
   mbtiInfo.value = utils.getMbtiInfo()
+  console.log(12312312, listRef.value);
+  new Sortable(listRef.value, {
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    onEnd: (evt) => {
+      const { newIndex, oldIndex } = evt;
+      const newList = [...personList.value];
+      const [removed] = newList.splice(oldIndex, 1);
+      newList.splice(newIndex, 0, removed);
+      personList.value = newList;
+      console.log(1122, personList.value);
+    },
+  });
 })
 
 </script>
@@ -603,6 +640,42 @@ onMounted(() => {
   &::-webkit-scrollbar {
     width: 0px;  /* 隐藏垂直滚动条 */
     height: 0px;  /* 隐藏水平滚动条 */
+  }
+}
+.rel-sel {
+  font-size: small;
+  display: flex;
+  margin-bottom: 3px;
+  max-width: 190px;
+  white-space: nowrap;       /* 禁止换行 */
+  .relation-sel-type {
+    margin-right: 3px;
+    padding: 2px;
+    border-radius: 2px;
+    cursor: default;
+  }
+  .relation-sel-item-group {
+    display: flex;
+    max-width: 120px;
+    overflow: auto;
+    scroll-behavior: smooth;
+    &::-webkit-scrollbar {
+      width: 0px;  /* 隐藏垂直滚动条 */
+      height: 0px;  /* 隐藏水平滚动条 */
+    }
+    .relation-sel-item {
+      margin-right: 3px;
+      background-color: #f1f4ff;
+      padding: 2px 4px;
+      border-radius: 2px;
+      cursor: default;
+      &:hover {
+        background-color: #d3daf8;
+      }
+    }
+  }
+  .sel-relation-active {
+    background-color: #d3daf8;
   }
 }
 </style>

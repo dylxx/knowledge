@@ -36,21 +36,19 @@
                     <div class="itemList-title">{{ item.name }}</div>
                   </div>
                   <div style="margin-left: auto" v-if="item.uuid === hoverGroup" >
-                    <a-tooltip>
-                      <a-popover v-model:open="visible" trigger="click" placement="right">
-                        <template #content>
-                          <a-input v-model:value="editGroupName" size="small" @keydown.enter="saveGroup(item)" @blur="saveGroup(item)"></a-input>
-                        </template>
-                        <a-button @click.stop=" groupNameCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" />
-                      </a-popover>
-                      <!-- <a-button @click.stop="editGroupCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" /> -->
-                      <a-popover v-model:open="visibleDel" trigger="click" placement="right">
-                        <template #content>
-                          <a-button @click="deleteGroup(item)" size="small">确定?</a-button>
-                        </template>
-                        <a-button @click.stop="visibleDel = !visibleDel" style="font-size: 12px; margin: 0; padding: 4px" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
-                      </a-popover>
-                    </a-tooltip>
+                    <a-popover v-model:open="visible" trigger="click" placement="right">
+                      <template #content>
+                        <a-input v-model:value="editGroupName" size="small" @keydown.enter="saveGroup(item)" @blur="saveGroup(item)"></a-input>
+                      </template>
+                      <a-button @click.stop=" groupNameCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" />
+                    </a-popover>
+                    <!-- <a-button @click.stop="editGroupCli(item)" style="font-size: 12px; margin: -10px; padding: 4px" type="normal" shape="circle" :icon="h(FormOutlined)" /> -->
+                    <a-popover v-model:open="visibleDel" trigger="click" placement="right">
+                      <template #content>
+                        <a-button @click="deleteGroup(item)" size="small">确定?</a-button>
+                      </template>
+                      <a-button @click.stop="visibleDel = !visibleDel" style="font-size: 12px; margin: 0; padding: 4px" type="normal" shape="circle" :icon="h(CloseCircleOutlined)" />
+                    </a-popover>
                   </div>
                 </a-list-item>
               </div>

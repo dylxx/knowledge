@@ -1,9 +1,5 @@
 <template  style="height: 260px">
-  <div class="drag" style="display: flex; justify-content: space-evenly;margin-top: 8px">
-    <LeftOutlined class="hoverActive no-drag" @click="gotoPre" />
-    <RollbackOutlined class="hoverActive no-drag" @click="backHome"/>
-    <RightOutlined class="hoverActive no-drag" @click="gotoNext"/>
-  </div>
+  <ToolBar/>
   <div class="dir-setting">
     <span>文件目录:  </span>
     <a-input size="small" style="width: 200px" v-model:value="rootDir"></a-input>
@@ -68,6 +64,7 @@ import { LinkOutlined,AppstoreOutlined,UpOutlined,DownOutlined,DeleteOutlined,
 import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
 import WaveSurfer from 'wavesurfer.js';
+import ToolBar from "./module/ToolBar.vue";
 import  "../style/main.less";
 
 // 接口定义

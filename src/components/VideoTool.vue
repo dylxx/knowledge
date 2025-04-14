@@ -1,9 +1,10 @@
 <template  style="height: 200px">
-  <div class="topBar drag" style="display: flex; justify-content: space-evenly">
+  <!-- <div class="topBar drag" style="display: flex; justify-content: space-evenly">
     <LeftOutlined class="hoverActive no-drag" @click="gotoPre" />
     <RollbackOutlined class="hoverActive no-drag" @click="backHome"/>
     <RightOutlined class="hoverActive no-drag" @click="gotoDiary"/>
-  </div>
+  </div> -->
+  <ToolBar/>
   <div class="main-content">
     <div class="transMp4-main">
       <div v-if="tool.curr === 0" style="display: flex;flex-direction: column"  @dragover.prevent @drop="dropFileTrans($event)">
@@ -11,70 +12,61 @@
           <UploadOutlined style="font-size: 28px" />
           <span style="font-size: 0.8em">拖拽上传</span>
           <span style="font-size: 0.8em">转{{ transFormat }}</span>
+          <RetweetOutlined class="hoverActive tool-item tool-change" title="功能切换" @click="gotoPage('next')" />
         </div>
       </div>
       <div v-if="tool.curr === 1" class="transMp4-drop" @dragover.prevent @drop="dropFileMerge($event)">
         <UploadOutlined style="font-size: 28px" />
         <span style="font-size: 0.8em">合并mp4</span>
         <span style="font-size: 0.8em">音视频同时拖拽</span>
+        <RetweetOutlined class="hoverActive tool-item tool-change" title="功能切换" @click="gotoPage('next')" />
       </div>
+      <!-- 文件列表 -->
       <ul class="transMp4-file" >
         <li v-for="(file,index) in fileData.list" :key="index">
-          <div style="display: flex">
+          <div style="display: flex" class="filelist-item" draggable="true" @dragstart="onDragStartFile($event,file)">
             <LinkOutlined style="margin:auto 3px"></LinkOutlined>
-            <div class="transMp4-FileName" :title="file.name" draggable="true" @dragstart="onDragStartFile($event,file)">{{ file.name }}</div>
-            <a-progress :status="file.active" :percent="file.percent" size="small" style="margin: auto;min-width: 20%" />
+            <div class="transMp4-FileName" :title="file.name">{{ file.name }}</div>
+            <CheckCircleOutlined class="file-conver-fin" v-show="file.percent === 100" />
+            <a-progress class="file-progress" v-show="file.percent !== 100" :status="file.active" :percent="file.percent" size="small" style="" />
             <!-- <DeleteOutlined class="delIcon" @click="deleteFile(file)"  /> -->
             <!-- <DownloadOutlined v-if="file.convert" @click="downlaodFile(file)" class="downloadIcon"/> -->
           </div>
         </li>
       </ul>
+      <!-- 工具条 -->
       <div class="tool-bar">
-        <a-tooltip class="tool-item">
-          <a-popover trigger="hover" v-model:open="formatVisible" placement="leftTop">
+          <a-popover class="tool-item" trigger="hover" v-model:open="formatVisible" placement="leftTop">
             <template #content >
-              <div style="height: 90px;margin: -6px">
-                <a-tree
-                  class="scoll formatTree"
-                  v-model:selectedKeys="selectedKeys"
-                  v-model:expandedKeys="expandedKeys"
-                  :tree-data="treeData"
-                  size="small"
-                  @select="selTree"
-                >
-                <template #switcherIcon="{ switcherCls, key }">
-                  <CaretDownOutlined :class="switcherCls" @mouseenter="expandedKeys=[key]"/>
-                </template>
-                </a-tree>
+              <div v-for="(converType, tIndex) in treeData" :key="tIndex" style="margin-bottom: 3px">
+                <span class="conver-sel-type">{{ converType.title }}</span>
+                <span class="conver-sel-item" :class="{'sel-cover-active':conver.key===transFormat}" v-for="(conver, index) in converType.children" :key="index" @click="selCoverType(conver.key)">{{ conver.title }}</span>
               </div>
             </template>
             <MenuFoldOutlined class="hoverActive"/>
           </a-popover>
-        </a-tooltip>
         <DeleteOutlined class="hoverActive tool-item" title="清理列表和缓存" @click="clearAll"/>
-        <DeliveredProcedureOutlined class="hoverActive tool-item" title="获取剪切板图片" @click="copyPhotoFromPlate" />
-        <RetweetOutlined class="hoverActive tool-item" title="功能切换" @click="gotoPage('next')" />
       </div>
       <div class="tool-bar">
-        <a-tooltip class="tool-item">
-          <a-popover trigger="hover" v-model:open="deviceTooltip.formatVisible" placement="leftTop">
-            <template #content >
-              <div style="height: 70px">
-                <ul class="deviceUl">
-                  <li 
-                    :class="{selActive:deviceTooltip.selected === item}" 
-                    class="maxStr" v-for="(item, index) in deviceList" 
-                    @click="deviceTooltip.selected = item;deviceTooltip.formatVisible=false" 
-                    :title="item"
-                    :key="index">{{ item }}
-                  </li>
-                </ul>
-              </div>
-            </template>
-            <MenuFoldOutlined class="hoverActive" />
-          </a-popover>
-        </a-tooltip>
+        <a-popover class="tool-item" trigger="hover" v-model:open="deviceTooltip.formatVisible" placement="leftTop">
+          <template #content >
+            <div>
+              <ul class="deviceUl">
+                <li 
+                  :class="{selActive:deviceTooltip.selected === item}" 
+                  class="maxStr" v-for="(item, index) in deviceList" 
+                  @click="deviceTooltip.selected = item;deviceTooltip.formatVisible=false" 
+                  :title="item"
+                  :key="index">{{ item }}
+                </li>
+              </ul>
+            </div>
+          </template>
+          <MenuFoldOutlined class="hoverActive" />
+        </a-popover>
         <SoundOutlined :class="{doActive:recording.doing}" class="hoverActive tool-item" title="录音" @click="record"/>
+        <FileImageOutlined class="hoverActive tool-item" title="剪切板图片生成png" @click="copyPhotoFromPlate" />
+        <FileTextOutlined class="hoverActive tool-item" title="剪切板文字生成txt" @click="saveClipboardToTxt" />
       </div>
     </div>
   </div>
@@ -83,14 +75,14 @@
 <script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount,watchEffect } from "vue";
 // import { settingFilled, StarFilled, StarTwoTone } from 'ant-design/icons-vue';
-import { LinkOutlined,CaretDownOutlined,DeliveredProcedureOutlined,CalculatorOutlined,
+import { LinkOutlined,CaretDownOutlined,
   RetweetOutlined,DeleteOutlined,UploadOutlined,RollbackOutlined,LeftOutlined,RightOutlined,
-  MenuFoldOutlined,SoundOutlined } from '@ant-design/icons-vue'
+  MenuFoldOutlined,SoundOutlined,CheckCircleOutlined,FileTextOutlined,FileImageOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
 import { message } from "ant-design-vue";
-import "../style/main.less";
 import utils,{ getCurrentTime } from "../js/utils";
+import ToolBar from "./module/ToolBar.vue";
 
 // 数据
 const router = useRouter();
@@ -133,11 +125,9 @@ const treeData = [
 ]
 let transFormat = ref('mp4')
 // methods
-const selTree = (keys, e) => {
-  if (e.node && !e.node.children) {
-    transFormat.value = e.node.key
-    formatVisible.value = false
-  }
+const selCoverType = (key) => {
+  transFormat.value = key
+  formatVisible.value = false
 }
 const record = async () => {
   if (recording.doing) {
@@ -165,36 +155,22 @@ const recordStop = async () => {
   file.active = ''
 }
 const copyPhotoFromPlate = async () => {
-  if (!navigator.clipboard || !navigator.clipboard.read) {
-    alert("当前浏览器不支持读取剪切板内容！");
-    return;
+  const resp = await window.electron.saveClipboardImageToFile()
+  if (!resp) {
+    message.error('生成失败')
+    return
   }
-  const clipboardItems = await navigator.clipboard.read();
-  for (const item of clipboardItems) {
-    for (const type of item.types) {
-      if (type.startsWith("image/")) {
-        
-        const blob = await item.getType(type)
-        const arrayBuffer = await blob.arrayBuffer(); // 获取图片数据
-        const uuid = crypto.randomUUID()
-        const timestamp = utils.getCurrentTime('YYYY-MM-DD_HH-mm-ss')
-        const name = `${timestamp}.${type.replace('image/','')}`;
-        fileData.list.push({id:uuid, name: name})
-        const result = await window.electron.uploadFile ({
-          id: uuid,
-          name,
-          type,
-          fixName: timestamp,
-          content: arrayBuffer
-        }, 'out')
-        const file = fileData.list.find(item => item.id === result.id)
-        file.path = result.path
-        file.percent = 100
-        return;
-      }
-    }
+  resp.percent = 100
+  fileData.list.push(resp)
+}
+const saveClipboardToTxt = async () => {
+  const resp = await window.electron.saveClipboardToTxt()
+  if (!resp) {
+    message.error('生成失败')
+    return
   }
-  message.error('剪切板没有图片')
+  resp.percent = 100
+  fileData.list.push(resp)
 }
 const backHome = () => {
   router.push('/')
@@ -338,6 +314,10 @@ onMounted(() => {
     file.path = data.path
     file.percent = 100
   })
+  window.electron.onConversionError((data) => {
+    const file = fileData.list.find(item => item.id === data.id)
+    file.active = 'exception'
+  })
   init()
 });
 
@@ -367,6 +347,7 @@ onBeforeUnmount(() => {
   border-radius: 6px;
   padding: 5px;
   .transMp4-drop {
+    position: relative;
     margin-bottom: 0;
     background-color: #ffffff;
     min-height: 70px;
@@ -432,14 +413,24 @@ li {
     color: rgb(116, 190, 255);
   }
 }
+.filelist-item {
+  margin: 0 5px;
+  background-color: #dae4ff;
+}
+.file-progress {
+  margin: auto;
+  min-width: 20%;
+  max-width: 46%;
+  margin: auto 0 auto auto;
+}
 .transMp4-FileName{
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  min-width: 7em;
+  // min-width: 7em;
   margin: auto 5px; 
   font-size: 0.8em;
-  width: 100%;
+  width: auto;
 }
 .ant-tree-title {
   font-size: 0.5em;
@@ -476,5 +467,34 @@ li {
 }
 .main-content {
   margin: 8px;
+}
+.file-conver-fin {
+  font-size: small;
+  color: green;
+  margin: auto 4px auto auto;
+}
+.tool-change {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+.conver-sel-type {
+  margin-right: 3px;
+  padding: 2px;
+  border-radius: 2px;
+  cursor: default;
+}
+.conver-sel-item {
+  margin-right: 3px;
+  background-color: #f1f4ff;
+  padding: 2px 4px;
+  border-radius: 2px;
+  cursor: default;
+  &:hover {
+    background-color: #d3daf8;
+  }
+}
+.sel-cover-active {
+  background-color: #d3daf8;
 }
 </style>

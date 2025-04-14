@@ -52,7 +52,7 @@ export async function createCamWindow() {
   }
   setupCamIpcHandlers()
   // 可选：打开 DevTools
-  camWin.webContents.openDevTools();
+  // camWin.webContents.openDevTools();
   // globalShortcut.register('Control+Shift+I', () => {
   //   win.webContents.openDevTools();
   // });

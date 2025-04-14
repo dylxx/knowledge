@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('electron', {
   onConversionProgress: (callback) => ipcRenderer.on('onConversionProgress', (_event, value) =>  callback(value)),
   onConversionFinish: (callback) => ipcRenderer.on('onConversionFinish', (_event, value) =>  callback(value)),
   margeToMp4Finish: (callback) => ipcRenderer.on('margeToMp4Finish', (_event, value) =>  callback(value)),
-  // onConversionError: (channel,callback) => ipcRenderer.on('conversion-error', callback),
+  onConversionError: (callback) => ipcRenderer.on('conversion-error', (_event, value) =>  callback(value)),
   onUpSuccess: (callback) => ipcRenderer.on('onUpSuccess', (_event, value) =>  callback(value)),
   resizeWindow: (size, name) => ipcRenderer.invoke('resize-window', size, name),
   onSearch: (filter) => ipcRenderer.invoke('onSearch', filter),
@@ -61,7 +61,11 @@ contextBridge.exposeInMainWorld('electron', {
   delFile: (params) => ipcRenderer.invoke('delFile', params),
   camWindowHandle: (params) => ipcRenderer.invoke('camWindowHandle', params),
   savePersonRel: (params) => ipcRenderer.invoke('savePersonRel', params),
-  deletePersonRel: (uuid) => ipcRenderer.invoke('deletePersonRel',uuid)
+  deletePersonRel: (uuid) => ipcRenderer.invoke('deletePersonRel',uuid),
+  saveClipboardToTxt: (params) => ipcRenderer.invoke('saveClipboardToTxt', params),
+  saveClipboardImageToFile: () => ipcRenderer.invoke('saveClipboardImageToFile'),
+  setClipboard: (text) => ipcRenderer.invoke('setClipboard', text),
+  hideWin: (winName) => ipcRenderer.invoke('hideWin', winName)
 });
 
 window.addEventListener('DOMContentLoaded', () => {

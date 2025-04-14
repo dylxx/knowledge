@@ -5,14 +5,13 @@
       <a-button @click="gotoManage" size="small"><SettingOutlined /></a-button>
       <a-input class="main-input" ref="mainInput" size="small" v-model:value="searchInput" @input="onSearch" @keydown.enter="copySel" allowClear>
       </a-input>
-      <a-button @click="changeTool" size="small"><RightOutlined /></a-button>
     </div>
     <div style="display: flex;justify-content: space-evenly;" v-if="!dataList.list.length">
       <BgColorsOutlined class="hoverActive" @click="absorbColor()" />
+      <VideoCameraOutlined  class="hoverActive" @click="openCamWindow"/>
       <PlaySquareOutlined class="hoverActive" @click="goto('videoTool')" />
       <SoundOutlined  class="hoverActive" @click="goto('soundEffects')"/>
       <ScheduleOutlined  class="hoverActive" @click="goto('tomatoClock')"/>
-      <VideoCameraOutlined  class="hoverActive" @click="openCamWindow"/>
       <HeartOutlined  class="hoverActive" @click="goto('relation')" />
     </div>
     <a-list  v-show="dataList.list.length" class="main-list" size="small" bordered :data-source="dataList.list" :split="false" style="border: none" :locale="{emptyText: '暂无数据'}">
@@ -29,12 +28,15 @@
 
 </template>
   
-  <script setup>
+<script setup>
 import { ref, reactive, watch,onUnmounted, onMounted, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
 import { SettingOutlined,RightOutlined,VideoCameraOutlined,SoundOutlined,ScheduleOutlined,BgColorsOutlined,PlaySquareOutlined,HeartOutlined } from '@ant-design/icons-vue'
 import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router';
+import ToolBar from "./module/ToolBar.vue";
+import "../style/main.less";
+
 
 // 数据
 let searchInput = ref("");
@@ -97,14 +99,14 @@ const changeTool = () => {
 }
 
 const copyContent = async (note) => {
-  await navigator.clipboard.writeText(note.content)
+  await window.electron.setClipboard(note.content)
 }
 
 const copySel = async () => {
   if (!dataList.list.length) return
   const item = dataList.list[selIndex.value]
   const text = item.content || item.password
-  await navigator.clipboard.writeText(text)
+  await window.electron.setClipboard(text)
 }
 
 const openCamWindow = async () => {

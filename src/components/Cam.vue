@@ -19,7 +19,6 @@
 
 <script setup>
 import { ref, reactive, watch,onUnmounted,computed, onMounted, onBeforeUnmount } from "vue";
-import "../style/main.less";
 import 'vue3-draggable-resizable/dist/Vue3DraggableResizable.css'
 import Vue3DraggableResizable from 'vue3-draggable-resizable'
 

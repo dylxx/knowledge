@@ -49,7 +49,7 @@ export async function createScreenshotWindow() {
   }
   setupScreenshotIpcHandlers()
   // 可选：打开 DevTools
-  screenshotWin.webContents.openDevTools();
+  // screenshotWin.webContents.openDevTools();
   // globalShortcut.register('Control+Shift+I', () => {
   //   win.webContents.openDevTools();
   // });

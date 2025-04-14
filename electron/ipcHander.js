@@ -1,5 +1,5 @@
 // ipcHandler.js
-import { ipcMain, BrowserWindow, app,desktopCapturer,screen,Menu } from 'electron'
+import { ipcMain, BrowserWindow, app,desktopCapturer,screen,Menu,clipboard } from 'electron'
 // 这样改回 require 方式
 let screenshotWin = null;
 
@@ -158,7 +158,6 @@ const getFilePaths = (event, fileEvent) => {
 }
 
 const processFile = async (event, fileData, transFormat) => {
-  console.log(1111, fileData);
   const fileInfo = uploadFile(null, fileData, 'temp')
   const sampleName = fileData.name.substring(0, fileData.name.lastIndexOf('.'))
   fileInfo.newFileName = `${sampleName}.${transFormat}`
@@ -478,7 +477,6 @@ const getAudioDevices = () => {
         reject(new Error(`FFmpeg exited with code ${code}`));
         return;
       }
-      console.log(2222, output);
       // 解析设备列表
       const audioDevices = parseAudioDevices(output);
       resolve(audioDevices);
@@ -498,7 +496,6 @@ function parseAudioDevices(output) {
       audioDevices.push(match[1]); // 设备名称
     }
   }
-  console.log(1111, audioDevices);
   return audioDevices;
 }
 
@@ -585,6 +582,66 @@ const deletePersonRel = async ($event, uuid) => {
   await runDb('deletePersonRel', toParams({uuid}))
 }
 
+const saveClipboardToTxt = async () => {
+  const dir = _out
+  const filename = utils.getCurrentTime('YYYY-MM-DD_HH-mm-ss') + '.txt'
+  try {
+    // 读取剪切板文本
+    const text = clipboard.readText();
+    if (!text) {
+      console.log('剪切板中没有文字内容');
+      return;
+    }
+    // 确保目录存在
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const filePath = path.join(dir, filename);
+    // 写入文件
+    fs.writeFileSync(filePath, text, 'utf8');
+    console.log(`剪切板内容已保存到: ${filePath}`);
+    const uuid = uuidv4()
+    return {id:uuid, name:filename, path:filePath}
+  } catch (err) {
+    console.error('保存失败:', err);
+  }
+}
+
+const saveClipboardImageToFile = async () => {
+  const dir = _out
+  let filename = utils.getCurrentTime('YYYY-MM-DD_HH-mm-ss') + '.png'
+  try {
+    const image = clipboard.readImage();
+    if (image.isEmpty()) {
+      return null
+    }
+
+    // 4. 写入文件
+    const filePath = path.join(dir, filename);
+    fs.writeFileSync(filePath, image.toPNG());
+    const uuid = uuidv4()
+    return {id:uuid, name:filename, path:filePath};
+  } catch (error) {
+    console.log(111, error);
+    return null
+  }
+}
+
+const setClipboard = async ($event, text) => {
+  console.log(111, text);
+  
+  clipboard.writeText(text)
+  return clipboard.readText(text) === text
+}
+
+const hideWin = ($event, winName = 'mainWin') => {
+  console.log(111, winName);
+  
+  const win = windowManager.getWindow(winName)
+  console.log(222, win);
+  win.hide()
+}
+
 function setupIpcHandlers() {
   ipcMain.handle('resize-window', resizeWindow)
   ipcMain.handle('getUngroupNote',  getUngroupNote)
@@ -631,6 +688,10 @@ function setupIpcHandlers() {
   ipcMain.on('ondragstart', ondragstart)
   ipcMain.handle('savePersonRel',savePersonRel)
   ipcMain.handle('deletePersonRel',deletePersonRel)
+  ipcMain.handle('saveClipboardToTxt',saveClipboardToTxt)
+  ipcMain.handle('saveClipboardImageToFile',saveClipboardImageToFile)
+  ipcMain.handle('setClipboard',setClipboard)
+  ipcMain.handle('hideWin', hideWin)
 }
 
 export {setupIpcHandlers}
