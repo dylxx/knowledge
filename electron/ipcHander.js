@@ -428,8 +428,10 @@ const toRecord = async (event, params) => {
         });
       
         recordingProcess.on('close', (code) => {
-          console.log('出错:::::', code);
-          
+          if (code) {
+            console.log('出错:::::', code);
+          }
+          console.log('录音关闭');
           recordingProcess = null;
           event.sender.send('recording-finished', code);
         });
@@ -500,7 +502,6 @@ function parseAudioDevices(output) {
 }
 
 const createShotWindow = ($event, params) => {
-  console.log(222, params.win);
   if (params.win === 'create') {
     screenshotWindow.createScreenshotWindow()
   } else if (params.win === 'close') {
@@ -564,7 +565,7 @@ const ondragstart = (event, filePath) => {
   console.log('path::::', filePath);
   event.sender.startDrag({
     file: filePath,
-    icon: path.join(__dirname, 'assets/pop.png')
+    icon: path.join(__dirname, 'assets/bubble.png')
   })
 }
 
@@ -582,15 +583,20 @@ const deletePersonRel = async ($event, uuid) => {
   await runDb('deletePersonRel', toParams({uuid}))
 }
 
-const saveClipboardToTxt = async () => {
+const saveClipboardToTxt = async ($event, type) => {
   const dir = _out
-  const filename = utils.getCurrentTime('YYYY-MM-DD_HH-mm-ss') + '.txt'
+  let filename = utils.getCurrentTime('YYYY-MM-DD_HH-mm-ss') + '.txt'
   try {
     // 读取剪切板文本
-    const text = clipboard.readText();
+    let text = clipboard.readText();
     if (!text) {
       console.log('剪切板中没有文字内容');
       return;
+    }
+    // 处理txt, 转为srt格式字幕文件
+    if (type === 'srt') {
+      text = convertToSRT(text)
+      filename = filename.replace('.txt', '.srt')
     }
     // 确保目录存在
     if (!fs.existsSync(dir)) {
@@ -607,6 +613,76 @@ const saveClipboardToTxt = async () => {
   }
 }
 
+/**
+ * 将翻译文本转换为SRT字幕格式
+ * @param {string} translatedText - 翻译后的文本（包含时间戳）
+ * @returns {string} - 转换后的SRT格式字符串
+ */
+function convertToSRT(translatedText) {
+  // 使用正则表达式分割带时间戳的句子
+  translatedText = translatedText.replaceAll('\n','').replaceAll('\t','')
+  const segments = translatedText.split(/([（(]\d+:\d+[）)])/g);
+  let srtOutput = '';
+  let counter = 1;
+  
+  // 临时存储当前时间段的内容
+  let currentTime = '';
+  let currentContent = '';
+  
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i].trim();
+    if (!segment) continue;
+    
+    // 检测时间戳行 (如 "(0:04)")
+    const timeMatch = segment.match(/[（(](\d+):(\d+)[）)]/);
+    
+    if (timeMatch) {
+      // 如果是新时间戳，先保存前一个片段
+      if (currentTime && currentContent) {
+        srtOutput += `${counter++}\n${formatTime(currentTime)}\n${currentContent.trim()}\n\n`;
+        currentContent = '';
+      }
+      // 记录新时间戳
+      const minutes = timeMatch[1].padStart(2, '0');
+      const seconds = timeMatch[2].padStart(2, '0');
+      currentTime = `00:${minutes}:${seconds},000`;
+    } else {
+      // 内容行
+      currentContent += segment + '\n';
+    }
+  }
+  
+  // 添加最后一个片段
+  if (currentTime && currentContent) {
+    srtOutput += `${counter}\n${formatTime(currentTime)}\n${currentContent.trim()}\n`;
+  }
+  
+  return srtOutput;
+}
+
+/**
+ * 格式化时间戳为SRT时间格式
+ * @param {string} timeStr - 原始时间字符串
+ * @returns {string} - 格式化后的时间范围
+ */
+function formatTime(timeStr) {
+  // 这里简化处理，实际应用需要根据上下文计算结束时间
+  const [hours, minutes, secondsWithMs] = timeStr.split(':');
+  const [seconds, milliseconds] = secondsWithMs.split(',');
+  
+  // 假设每个片段持续4秒（可根据需要调整）
+  const endTime = new Date(0);
+  endTime.setHours(parseInt(hours));
+  endTime.setMinutes(parseInt(minutes));
+  endTime.setSeconds(parseInt(seconds) + 4);
+  endTime.setMilliseconds(parseInt(milliseconds));
+  
+  const endHours = endTime.getHours().toString().padStart(2, '0');
+  const endMins = endTime.getMinutes().toString().padStart(2, '0');
+  const endSecs = endTime.getSeconds().toString().padStart(2, '0');
+  
+  return `${timeStr} --> ${endHours}:${endMins}:${endSecs},000`;
+}
 const saveClipboardImageToFile = async () => {
   const dir = _out
   let filename = utils.getCurrentTime('YYYY-MM-DD_HH-mm-ss') + '.png'
@@ -635,10 +711,7 @@ const setClipboard = async ($event, text) => {
 }
 
 const hideWin = ($event, winName = 'mainWin') => {
-  console.log(111, winName);
-  
   const win = windowManager.getWindow(winName)
-  console.log(222, win);
   win.hide()
 }
 

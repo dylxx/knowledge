@@ -44,8 +44,8 @@ const init = async () => {
   const cMinHot = await window.electron.getConf('minHot')
   minHot.value = cMinHot
 }
-const cliPwdShow = (show) => {
-  const cPin = '4869'
+const cliPwdShow = async (show) => {
+  const cPin = await window.electron.getConf('cPin')
   if (show && pin.value === cPin) {
     showPwdMenu.value = true
     emit('unlockPwd', true)
@@ -57,7 +57,7 @@ const cliPwdShow = (show) => {
   }
 }
 const toSetting = async () => {
-  await window.electron.setConfig(config)
+  // await window.electron.setConfig(config)
 }
 
 onMounted(() => {

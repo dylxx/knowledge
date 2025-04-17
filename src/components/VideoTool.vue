@@ -1,9 +1,4 @@
 <template  style="height: 200px">
-  <!-- <div class="topBar drag" style="display: flex; justify-content: space-evenly">
-    <LeftOutlined class="hoverActive no-drag" @click="gotoPre" />
-    <RollbackOutlined class="hoverActive no-drag" @click="backHome"/>
-    <RightOutlined class="hoverActive no-drag" @click="gotoDiary"/>
-  </div> -->
   <ToolBar/>
   <div class="main-content">
     <div class="transMp4-main">
@@ -36,37 +31,54 @@
       </ul>
       <!-- 工具条 -->
       <div class="tool-bar">
-          <a-popover class="tool-item" trigger="hover" v-model:open="formatVisible" placement="leftTop">
-            <template #content >
-              <div v-for="(converType, tIndex) in treeData" :key="tIndex" style="margin-bottom: 3px">
-                <span class="conver-sel-type">{{ converType.title }}</span>
-                <span class="conver-sel-item" :class="{'sel-cover-active':conver.key===transFormat}" v-for="(conver, index) in converType.children" :key="index" @click="selCoverType(conver.key)">{{ conver.title }}</span>
-              </div>
-            </template>
-            <MenuFoldOutlined class="hoverActive"/>
-          </a-popover>
         <DeleteOutlined class="hoverActive tool-item" title="清理列表和缓存" @click="clearAll"/>
       </div>
       <div class="tool-bar">
+        <a-popover class="tool-item" trigger="hover" v-model:open="formatVisible" placement="leftTop">
+          <template #content >
+            <div v-for="(converType, tIndex) in treeData" :key="tIndex" style="margin-bottom: 3px">
+              <span class="conver-sel-type">{{ converType.title }}</span>
+              <span class="conver-sel-item" :class="{'sel-cover-active':conver.key===transFormat}" v-for="(conver, index) in converType.children" :key="index" @click="selCoverType(conver.key)">{{ conver.title }}</span>
+            </div>
+          </template>
+          <MenuFoldOutlined class="hoverActive"/>
+        </a-popover>
         <a-popover class="tool-item" trigger="hover" v-model:open="deviceTooltip.formatVisible" placement="leftTop">
           <template #content >
             <div>
               <ul class="deviceUl">
                 <li 
+                  v-for="(item, index) in deviceList" 
                   :class="{selActive:deviceTooltip.selected === item}" 
-                  class="maxStr" v-for="(item, index) in deviceList" 
-                  @click="deviceTooltip.selected = item;deviceTooltip.formatVisible=false" 
+                  class="maxStr"
+                  @click="deviceTooltip.selected = item" 
                   :title="item"
                   :key="index">{{ item }}
                 </li>
               </ul>
             </div>
           </template>
-          <MenuFoldOutlined class="hoverActive" />
+          <SoundOutlined :class="{doActive:recording.doing}" class="hoverActive tool-item" title="录音" @click="record"/>
         </a-popover>
-        <SoundOutlined :class="{doActive:recording.doing}" class="hoverActive tool-item" title="录音" @click="record"/>
         <FileImageOutlined class="hoverActive tool-item" title="剪切板图片生成png" @click="copyPhotoFromPlate" />
-        <FileTextOutlined class="hoverActive tool-item" title="剪切板文字生成txt" @click="saveClipboardToTxt" />
+        <a-popover class="tool-item" trigger="hover" placement="left">
+          <template #content >
+            <div>
+              <ul class="deviceUl">
+                <li 
+                  v-for="(item, index) in textTypes" 
+                  :class="{selActive:textTooltip.selected === item.type}" 
+                  class="maxStr"
+                  @click="textTooltip.selected = item.type" 
+                  :title="item.title"
+                  :key="index">{{ item.title }}
+                </li>
+              </ul>
+            </div>
+          </template>
+          <FileTextOutlined class="hoverActive tool-item" title="剪切板文字生成txt" @click="saveClipboardToTxt" />
+        </a-popover>
+        <!-- <DeleteOutlined class="hoverActive tool-item" title="清理列表和缓存" @click="clearAll"/> -->
       </div>
     </div>
   </div>
@@ -93,6 +105,14 @@ const deviceTooltip = reactive({
   selected: '',
   formatVisible: false
 })
+const textTooltip = reactive({
+  selected: 'txt',
+  formatVisible: false
+})
+const textTypes = ref([
+  {type: 'txt', title: 'txt'},
+  {type: 'srt', title: '(time)srt'}
+])
 const deviceList = ref([])
 let tool = reactive({
   curr: 0,
@@ -133,6 +153,7 @@ const record = async () => {
   if (recording.doing) {
     recordStop()
   } else {
+    deviceTooltip.formatVisible = false
     recordStart()
   }
   recording.doing = !recording.doing
@@ -164,7 +185,8 @@ const copyPhotoFromPlate = async () => {
   fileData.list.push(resp)
 }
 const saveClipboardToTxt = async () => {
-  const resp = await window.electron.saveClipboardToTxt()
+  console.log(111, textTooltip.selected);
+  const resp = await window.electron.saveClipboardToTxt(textTooltip.selected)
   if (!resp) {
     message.error('生成失败')
     return
@@ -281,6 +303,9 @@ const init = async () => {
   let list = await window.electron.getAudioDevices()
   list.sort((a,b) => b.includes('立体声混音') - a.includes('立体声混音'))
   deviceList.value = list
+  if (list.length > 0) {
+    deviceTooltip.selected = list[0]
+  }
 }
 // 清理列表和缓存
 const clearAll = () => {
@@ -497,4 +522,5 @@ li {
 .sel-cover-active {
   background-color: #d3daf8;
 }
+
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="moveBar"></div>
+  <div class="moveBar" style="margin-top: 5px"></div>
   <div class="main-content" ref="mainContent">
     <!-- 左侧导航栏 -->
     <div class="group-content">
@@ -483,7 +483,7 @@ onBeforeUnmount(() => {
 .main-content {
   display: flex;
   flex-direction: row;
-  margin: 0 auto;
+  margin: 3px 5px;
   width: 100%;
   height: 600px;
   .group-content {
@@ -513,7 +513,7 @@ onBeforeUnmount(() => {
     margin: 5px 2px;
     background-color: #f0f5ff;
     .main-list {
-      height: 95%;
+      height: 93%;
       overflow: auto;
       &::-webkit-scrollbar {
         width: 0px;  /* 隐藏垂直滚动条 */
@@ -534,7 +534,7 @@ onBeforeUnmount(() => {
 .group-list {
   margin: 0.3em 0;
   border-radius: 10px;
-  height: 64%;
+  max-height: 332px;
   overflow: auto;
   &::-webkit-scrollbar {
     width: 0px;  /* 隐藏垂直滚动条 */
